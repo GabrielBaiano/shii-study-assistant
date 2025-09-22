@@ -1,12 +1,353 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Gemini Clone (Markdown + Code Highlight)</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&display=swap">
+
+  <!-- Highlight.js para blocos de código -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Marked.js para interpretar Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    :root {
+      --background-color: #f0f4f9;
+      --container-bg: #ffffff;
+      --primary-text: #1f1f1f;
+      --secondary-text: #5f6368;
+      --accent-color: #1a73e8;
+      --user-message-bg: #e1eefd;
+      --model-message-bg: #f1f3f4;
+      --border-color: #dadce0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    body {
+      font-family: 'Google Sans', sans-serif;
+      background-color: var(--background-color);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: var(--primary-text);
+    }
+
+    .main-container {
+      width: 100%;
+      max-width: 800px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--container-bg);
+      box-shadow: var(--shadow);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .settings-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: var(--container-bg);
+    }
+
+    .settings-header h1 {
+      font-size: 20px;
+      margin: 0 0 12px 0;
+      color: var(--primary-text);
+    }
+
+    .api-key-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .api-key-container label {
+      font-size: 14px;
+      color: var(--secondary-text);
+    }
+
+    #api-key {
+      flex-grow: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .chat-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .chat-message {
+      display: flex;
+      max-width: 85%;
+    }
+
+    .chat-message .message-content {
+      padding: 12px 16px;
+      border-radius: 18px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      overflow-x: auto;
+    }
+
+    .chat-message.user {
+      align-self: flex-end;
+    }
+    .chat-message.user .message-content {
+      background-color: var(--user-message-bg);
+      color: #0b57d0;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-message.model {
+      align-self: flex-start;
+    }
+    .chat-message.model .message-content {
+      background-color: var(--model-message-bg);
+      border-bottom-left-radius: 4px;
+    }
+
+    .loading {
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0.5; }
+    }
+
+    .chat-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .chat-form {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    #prompt-input {
+      flex-grow: 1;
+      padding: 12px 16px;
+      border: none;
+      background-color: var(--model-message-bg);
+      border-radius: 24px;
+      font-size: 16px;
+      resize: none;
+      max-height: 100px;
+      overflow-y: auto;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+    #prompt-input:focus {
+      outline: none;
+    }
+
+    #send-button {
+      background-color: transparent;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #send-button:hover {
+      background-color: var(--model-message-bg);
+    }
+    #send-button svg {
+      color: var(--secondary-text);
+    }
+    #send-button:disabled svg {
+      color: var(--border-color);
+      cursor: not-allowed;
+    }
+
+    .disclaimer {
+      font-size: 12px;
+      color: var(--secondary-text);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    pre {
+      background: #282c34;
+      color: #f8f8f2;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    code {
+      font-family: Consolas, monospace;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        align-items: flex-start;
+      }
+      .main-container {
+        border-radius: 0;
+        max-width: 100%;
+        height: 100vh;
+      }
+      .settings-header, .chat-container, .chat-footer {
+        padding: 12px;
+      }
+      .api-key-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+      #api-key {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>Gemini Page</h1>
-  <p>This is the Gemini page content.</p>
+
+  <div class="main-container">
+    <header class="settings-header">
+      <h1>Gemini Clone</h1>
+      <div class="api-key-container">
+        <label for="api-key">Sua Google AI API Key:</label>
+        <input type="password" id="api-key" placeholder="Cole sua chave aqui">
+      </div>
+    </header>
+
+    <div class="chat-container" id="chat-container">
+      <div class="chat-message model">
+        <div class="message-content">
+          <p>Olá! Para começar, insira sua Google AI API Key acima e me envie uma mensagem.</p>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="chat-footer">
+      <form id="chat-form" class="chat-form">
+        <textarea id="prompt-input" placeholder="Digite sua mensagem..." required></textarea>
+        <button type="submit" id="send-button">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </form>
+      <p class="disclaimer">As informações podem ser imprecisas. Verifique fatos importantes.</p>
+    </footer>
+  </div>
+
+  <script>
+    const API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=";
+    const chatForm = document.getElementById("chat-form");
+    const promptInput = document.getElementById("prompt-input");
+    const chatContainer = document.getElementById("chat-container");
+    const apiKeyInput = document.getElementById("api-key");
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedKey = localStorage.getItem('googleApiKey');
+      if (savedKey) apiKeyInput.value = savedKey;
+    });
+
+    apiKeyInput.addEventListener('input', () => {
+      localStorage.setItem('googleApiKey', apiKeyInput.value.trim());
+    });
+
+    function addMessage(sender, message) {
+      const div = document.createElement("div");
+      div.classList.add("chat-message", sender);
+      const content = document.createElement("div");
+      content.classList.add("message-content");
+
+      // Converte Markdown -> HTML
+      content.innerHTML = marked.parse(message);
+
+      // Aplica highlight.js no código
+      content.querySelectorAll('pre code').forEach(block => {
+        hljs.highlightElement(block);
+      });
+
+      div.appendChild(content);
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    async function sendToGemini(prompt, apiKey, imageBase64 = null) {
+      addMessage("user", prompt + (imageBase64 ? " [Imagem enviada]" : ""));
+      const loadingDiv = document.createElement("div");
+      loadingDiv.classList.add("chat-message", "model");
+      loadingDiv.innerHTML = `<div class="message-content loading"><p>Digitando...</p></div>`;
+      chatContainer.appendChild(loadingDiv);
+
+      try {
+        const body = {
+          contents: [{
+            parts: [
+              { text: prompt },
+              ...(imageBase64 ? [{ inlineData: { mimeType: "image/png", data: imageBase64 } }] : [])
+            ]
+          }]
+        };
+
+        const res = await fetch(`${API_URL}${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+        chatContainer.removeChild(loadingDiv);
+
+        let modelText = "Erro: resposta vazia.";
+        if (data.candidates?.length && data.candidates[0].content?.parts?.length) {
+          modelText = data.candidates[0].content.parts[0].text;
+        }
+        addMessage("model", modelText);
+      } catch (err) {
+        chatContainer.removeChild(loadingDiv);
+        addMessage("model", "Erro: " + err.message);
+      }
+    }
+
+    chatForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const prompt = promptInput.value.trim();
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) return alert("Insira sua API Key.");
+      if (prompt) {
+        sendToGemini(prompt, apiKey);
+        promptInput.value = "";
+      }
+    });
+
+    document.addEventListener("paste", e => {
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) return alert("Insira sua API Key.");
+      if (e.clipboardData) {
+        const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith("image/"));
+        if (item) {
+          const file = item.getAsFile();
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const base64 = evt.target.result.split(",")[1];
+            sendToGemini("Explique este problema do leetcode em português e mostre o código resposta:", apiKey, base64);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+  </script>
 </body>
 </html>
