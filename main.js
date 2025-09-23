@@ -41,11 +41,9 @@ let CONTENT_Y;
 // Content sources - Add your favorite websites here!
 // Pro tip: Don't add NSFW stuff in my app pls !
 const contentSources = [
-  "https://www.google.com",
+  "./src/pages/gemini/index.html",
   "https://www.github.com",
   "https://www.stackoverflow.com", // Your real programming teacher
-  "https://www.youtube.com",
-  "https://www.twitter.com",
 
   // 'file://' + path.join(__dirname, 'local-page.html') // Uncomment when you create this file
 ];
@@ -357,10 +355,12 @@ function setupKeyboardShortcuts() {
 app.whenReady().then(() => {
   createWindow();
 
+  // NEED REVIEW: Delayed tray creation create another tray!!!
+
   // Give the window a moment to load before creating tray
-  setTimeout(() => {
-    createSystemTray();
-  }, 1000);
+  // setTimeout(() => {
+  //   createSystemTray();
+  // }, 1000);
 
   app.on("activate", () => {
     // macOS behavior: recreate window when dock icon is clicked
