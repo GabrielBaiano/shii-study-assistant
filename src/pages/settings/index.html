@@ -1,0 +1,251 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Settings</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 16px; color: #111; }
+      h1 { font-size: 18px; margin: 0 0 12px; }
+      .section { border: 1px solid #e5e7eb; border-radius: 0px; padding: 12px; margin-bottom: 12px; }
+      .row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; }
+      label { font-weight: 600; }
+      .hint { color: #6b7280; font-size: 12px; }
+      select, input[type="checkbox"] { font-size: 14px; }
+      .footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+      button { background: #111827; color: white; border: 0; border-radius: 0px; padding: 8px 12px; cursor: pointer; }
+      button:disabled { background: #9ca3af; cursor: default; }
+    </style>
+  </head>
+  <body>
+    <h1>Settings</h1>
+
+    <div class="section">
+      <div class="row">
+        <label for="alwaysOnTop">Always on top</label>
+        <input id="alwaysOnTop" type="checkbox" />
+      </div>
+      <div class="row">
+        <label for="autoStart">Auto start with system</label>
+        <input id="autoStart" type="checkbox" />
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="row">
+        <label for="scrollSpeed">Scroll speed</label>
+        <select id="scrollSpeed">
+          <option value="50">Slow (50px)</option>
+          <option value="100">Normal (100px)</option>
+          <option value="200">Fast (200px)</option>
+        </select>
+      </div>
+      <div class="hint">Changes apply immediately.</div>
+    </div>
+
+    <div class="section">
+      <div class="row">
+        <label for="siteInput">Add site (https://...)</label>
+        <div>
+          <input id="siteInput" placeholder="https://example.com" style="width:220px;" />
+          <button id="addSiteBtn">Add</button>
+        </div>
+      </div>
+      <div class="row" style="flex-direction:column; align-items:stretch;">
+        <label>Sites</label>
+        <ul id="sitesList" style="list-style:none; padding:0; margin:8px 0; max-height:160px; overflow:auto; border:1px solid #e5e7eb; border-radius:0px;"></ul>
+        <div class="hint">Adding/removing sites requires restart.</div>
+      </div>
+    </div>
+      <div class="row">
+        <label>Remap: Scroll Up</label>
+        <div>
+          <span id="labelScrollUp" class="hint" style="margin-right:8px;"></span>
+          <button id="remapScrollUp">Set</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Remap: Scroll Down</label>
+        <div>
+          <span id="labelScrollDown" class="hint" style="margin-right:8px;"></span>
+          <button id="remapScrollDown">Set</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Remap: Toggle Lock</label>
+        <div>
+          <span id="labelToggleLock" class="hint" style="margin-right:8px;"></span>
+          <button id="remapToggleLock">Set</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>Remap: Minimize/Restore</label>
+        <div>
+          <span id="labelToggleMinimize" class="hint" style="margin-right:8px;"></span>
+          <button id="remapToggleMinimize">Set</button>
+        </div>
+      </div>
+      <div class="hint">Press the desired key combination when prompted.</div>
+    </div>
+
+    <div class="footer">
+      <button id="restartBtn">Restart app</button>
+      <button id="closeBtn" style="margin-left:8px;">Close</button>
+    </div>
+
+    <script>
+      const checkboxAlwaysOnTop = document.getElementById('alwaysOnTop');
+      const checkboxAutoStart = document.getElementById('autoStart');
+      const selectScroll = document.getElementById('scrollSpeed');
+      const closeBtn = document.getElementById('closeBtn');
+      const remapScrollUpBtn = document.getElementById('remapScrollUp');
+      const remapScrollDownBtn = document.getElementById('remapScrollDown');
+      const remapToggleLockBtn = document.getElementById('remapToggleLock');
+      const remapToggleMinimizeBtn = document.getElementById('remapToggleMinimize');
+      const labelScrollUp = document.getElementById('labelScrollUp');
+      const labelScrollDown = document.getElementById('labelScrollDown');
+      const labelToggleLock = document.getElementById('labelToggleLock');
+      const labelToggleMinimize = document.getElementById('labelToggleMinimize');
+      const restartBtn = document.getElementById('restartBtn');
+      const siteInput = document.getElementById('siteInput');
+      const addSiteBtn = document.getElementById('addSiteBtn');
+      const sitesList = document.getElementById('sitesList');
+
+      async function loadSettings() {
+        try {
+          const s = await window.settingsAPI.get();
+          checkboxAlwaysOnTop.checked = !!s.alwaysOnTop;
+          checkboxAutoStart.checked = !!s.autoStart;
+          selectScroll.value = String(s.scrollSpeed || 100);
+          const sh = s.shortcuts || {};
+          labelScrollUp.textContent = sh.scrollUp || "";
+          labelScrollDown.textContent = sh.scrollDown || "";
+          labelToggleLock.textContent = sh.toggleLock || "";
+          labelToggleMinimize.textContent = sh.toggleMinimize || "";
+          renderSites(s.userSites || []);
+        } catch (e) {
+          console.error('Failed to load settings', e);
+        }
+      }
+
+      function debounce(fn, ms) {
+        let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+      }
+
+      const update = debounce((partial) => window.settingsAPI.update(partial), 50);
+
+      checkboxAlwaysOnTop.addEventListener('change', () => update({ alwaysOnTop: checkboxAlwaysOnTop.checked }));
+      checkboxAutoStart.addEventListener('change', () => update({ autoStart: checkboxAutoStart.checked }));
+      selectScroll.addEventListener('change', () => update({ scrollSpeed: Number(selectScroll.value) }));
+
+      closeBtn.addEventListener('click', () => window.close());
+      restartBtn.addEventListener('click', () => window.settingsAPI.restart());
+
+      function renderSites(sites) {
+        sitesList.innerHTML = '';
+        sites.forEach((url, idx) => {
+          const li = document.createElement('li');
+          li.style.display = 'flex';
+          li.style.justifyContent = 'space-between';
+          li.style.padding = '6px 8px';
+          const span = document.createElement('span');
+          span.textContent = url;
+          const rm = document.createElement('button');
+          rm.textContent = 'Remove';
+          rm.addEventListener('click', async () => {
+            const s = await window.settingsAPI.get();
+            const next = (s.userSites || []).filter((_, i) => i !== idx);
+            await update({ userSites: next });
+            renderSites(next);
+          });
+          li.appendChild(span);
+          li.appendChild(rm);
+          sitesList.appendChild(li);
+        });
+      }
+
+      addSiteBtn.addEventListener('click', async () => {
+        const url = (siteInput.value || '').trim();
+        if (!/^https?:\/\//i.test(url)) {
+          alert('Enter a valid http(s) URL');
+          return;
+        }
+        const s = await window.settingsAPI.get();
+        const next = Array.from(new Set([...(s.userSites || []), url]));
+        await update({ userSites: next });
+        renderSites(next);
+        siteInput.value = '';
+      });
+
+      function normalizeCombo(e) {
+        const parts = [];
+        if (e.ctrlKey || e.metaKey) parts.push('CommandOrControl');
+        if (e.altKey) parts.push('Alt');
+        if (e.shiftKey) parts.push('Shift');
+        let key = e.key;
+        if (key === ' ') key = 'Space';
+        if (key.startsWith('Arrow')) key = key.replace('Arrow', '');
+        if (key.length === 1) key = key.toUpperCase();
+        const ignore = ['Control','Alt','Shift','Meta'];
+        if (!ignore.includes(key)) parts.push(key);
+        return parts.join('+');
+      }
+
+      function captureCombo(label, onDone) {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.background = 'rgba(0,0,0,0.5)';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+        overlay.innerHTML = `<div style="background:#fff;padding:16px;border-radius:0px;min-width:260px;text-align:center;">
+          <div style="font-weight:700;margin-bottom:8px;">Press keys for ${label}</div>
+          <div class="hint">Press Esc to cancel</div>
+        </div>`;
+        document.body.appendChild(overlay);
+
+        function onKeyDown(e) {
+          if (e.key === 'Escape') { cleanup(); return; }
+          const combo = normalizeCombo(e);
+          if (combo) { cleanup(); onDone(combo); }
+        }
+        function cleanup() {
+          window.removeEventListener('keydown', onKeyDown, true);
+          overlay.remove();
+        }
+        window.addEventListener('keydown', onKeyDown, true);
+      }
+
+      remapScrollUpBtn.addEventListener('click', () => {
+        captureCombo('Scroll Up', async (combo) => {
+          await update({ shortcuts: { scrollUp: combo } });
+          labelScrollUp.textContent = combo;
+        });
+      });
+      remapScrollDownBtn.addEventListener('click', () => {
+        captureCombo('Scroll Down', async (combo) => {
+          await update({ shortcuts: { scrollDown: combo } });
+          labelScrollDown.textContent = combo;
+        });
+      });
+      remapToggleLockBtn.addEventListener('click', () => {
+        captureCombo('Toggle Lock', async (combo) => {
+          await update({ shortcuts: { toggleLock: combo } });
+          labelToggleLock.textContent = combo;
+        });
+      });
+      remapToggleMinimizeBtn.addEventListener('click', () => {
+        captureCombo('Minimize/Restore', async (combo) => {
+          await update({ shortcuts: { toggleMinimize: combo } });
+          labelToggleMinimize.textContent = combo;
+        });
+      });
+
+      loadSettings();
+    </script>
+  </body>
+  </html>
+
+

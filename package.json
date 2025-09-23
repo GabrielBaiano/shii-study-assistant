@@ -3,15 +3,19 @@
   "version": "1.0.0",
   "description": "",
   "main": "./main.js",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^38.1.2"
+    "@testing-library/dom": "^10.4.0",
+    "electron": "^38.1.2",
+    "jsdom": "^25.0.0",
+    "vitest": "^2.1.1"
   }
 }

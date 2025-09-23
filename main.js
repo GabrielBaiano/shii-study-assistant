@@ -1,52 +1,50 @@
-const {
-  app,
-  BrowserWindow,
-  WebContentsView,
-  screen,
-  globalShortcut,
-  Tray,
-  Menu,
-  nativeImage,
-} = require("electron");
-const path = require("path");
+import { app, BrowserWindow, WebContentsView, screen, globalShortcut, ipcMain } from "electron";
+import path from "path";
+import { initTray } from "./tray.js";
+import { getSettingsFilePath, loadSettingsFromDisk, saveSettingsToDisk } from './utils/settings.js';
+import { buildSources } from './utils/sources.js';
 
-// Disclamer - My main language is not English. Please excuse any grammatical errors in comments.
-
-// Global variables - because who doesn't love some good old global state? 🤷‍♂️
+// Global state (we keep it tidy, promise)
 let mainWindow;
-let tray; // The mighty system tray - your app's best friend
 let webContentViews = [];
 let offset = 0;
 let targetOffset = 0;
 let scrolling = false;
-let isAppVisible = true; // Keep track of window visibility like a stalker
+let isAppVisible = true;
+let settingsWindow = null;
+let trayController = null;
 
-// App settings - You'll probably want to save these to a file later (hint hint)
+// App settings
 let appSettings = {
-  alwaysOnTop: true, // Because my app is obviously more important than everything else
-  autoStart: false, // TODO: Implement this when you feel like it
-  scrollSpeed: 100, // TODO: Make this configurable in the future
+  alwaysOnTop: true,
+  autoStart: false,
+  scrollSpeed: 100,
+  shortcuts: {
+    // Tip: Change these in Settings; hardcoding is so 1999
+    scrollUp: "CommandOrControl+Alt+Up",
+    scrollDown: "CommandOrControl+Alt+Down",
+    toggleLock: "CommandOrControl+Alt+L",
+    toggleMinimize: "CommandOrControl+Alt+M",
+  },
+  userSites: [],
 };
 
 // Key constants
 const UP = "Up";
 const DOWN = "Down";
 
-// Size and positioning configs - Math time! (fuck math)
+// Size and positioning configs - Math time! (fuck math!)
 let CONTENT_WIDTH;
 let CONTENT_HEIGHT;
 let CONTENT_X;
 let CONTENT_Y;
 
-// Content sources - Add your favorite websites here!
-// Pro tip: Don't add NSFW stuff in my app pls !
-const contentSources = [
-  "./src/pages/gemini/index.html",
-  "https://www.github.com",
-  "https://www.stackoverflow.com", // Your real programming teacher
-
-  // 'file://' + path.join(__dirname, 'local-page.html') // Uncomment when you create this file
+// Static sources list (edit here to add fixed entries first)
+// Pro tip: keep things minimal; less is more—except for pizza slices.
+const staticSources = [
+  { label: 'Gemini', source: 'file://' + path.join(__dirname, 'src', 'pages', 'gemini', 'index.html') },
 ];
+const placeholderPage = 'file://' + path.join(__dirname, 'src', 'pages', 'placeholder', 'index.html');
 
 // Calculate window dimensions - Some fancy math to make it look professional
 function calculateDimensions() {
@@ -88,8 +86,11 @@ function createWindow() {
     },
   });
 
+  // Build list of sources: static first, then user-configured
+  const sources = buildSources(staticSources, appSettings.userSites, placeholderPage);
+
   // Create WebContentsViews for each source - It's like inception but with websites
-  contentSources.forEach((source, index) => {
+  sources.forEach((entry, index) => { // ( made by AI need review )
     const view = new WebContentsView({
       webPreferences: {
         nodeIntegration: false,
@@ -109,30 +110,40 @@ function createWindow() {
     mainWindow.contentView.addChildView(view);
     webContentViews.push(view);
 
-    // Load content based on type (smart loading, we're basically AI now)
-    loadContent(view, source);
+    // Load content based on type
+    loadContent(view, entry);
   });
 
   mainWindow.show();
 
   // Setup keyboard shortcuts - Because clicking is for peasants
-  setupKeyboardShortcuts();
+  setupKeyboardShortcuts(); // ( made by AI need review )
 
-  // Create system tray - The real MVP
-  createSystemTray();
+  // System tray
+  trayController = initTray({
+    getAppSettings: () => appSettings,
+    toggleAlwaysOnTop,
+    toggleAutoStart,
+    setScrollSpeed,
+    toggleWindowVisibility,
+    openSettingsWindow,
+    isAppVisible: () => isAppVisible,
+  });
+
+  // Register IPC handlers for settings
+  registerSettingsIpc();
 }
 
-// Load content intelligently - We're basically web developers now 💻
-function loadContent(view, source) {
-  if (source.startsWith("http://") || source.startsWith("https://")) {
-    // Load web URL - The internet is our oyster
-    view.webContents.loadURL(source);
-  } else if (source.startsWith("file://")) {
-    // Load local file - Old school but gold school
-    view.webContents.loadFile(source.replace("file://", ""));
+// Load content intelligently
+function loadContent(view, entry) {
+  const src = typeof entry === 'string' ? entry : entry.source;
+  if (src.startsWith("http://") || src.startsWith("https://")) {
+    view.webContents.loadURL(src);
+  } else if (src.startsWith("file://")) {
+    view.webContents.loadFile(src.replace("file://", ""));
   } else {
-    // Assume it's a local file without prefix - YOLO loading
-    view.webContents.loadFile(source);
+    // Assume it's a local file path
+    view.webContents.loadFile(src);
   }
 }
 
@@ -220,97 +231,130 @@ function createSystemTray() {
 }
 
 // Update tray menu - Call this whenever settings change
-function updateTrayMenu() {
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: "Settings",
-      type: "submenu",
-      submenu: [
-        {
-          label: `Always on Top ${getSettingCheckbox(appSettings.alwaysOnTop)}`,
-          click: () => toggleAlwaysOnTop(),
-        },
-        {
-          label: `Auto Start ${getSettingCheckbox(appSettings.autoStart)}`,
-          click: () => toggleAutoStart(),
-          // TODO: Implement auto-start functionality when you feel motivated
-        },
-        { type: "separator" },
-        {
-          label: "Scroll Speed",
-          type: "submenu",
-          submenu: [
-            {
-              label: `Slow (50px) ${
-                appSettings.scrollSpeed === 50 ? "●" : "○"
-              }`,
-              click: () => setScrollSpeed(50),
-            },
-            {
-              label: `Normal (100px) ${
-                appSettings.scrollSpeed === 100 ? "●" : "○"
-              }`,
-              click: () => setScrollSpeed(100),
-            },
-            {
-              label: `Fast (200px) ${
-                appSettings.scrollSpeed === 200 ? "●" : "○"
-              }`,
-              click: () => setScrollSpeed(200),
-            },
-          ],
-        },
-      ],
-    },
-    { type: "separator" },
-    {
-      label: isAppVisible ? "Hide Window" : "Show Window",
-      click: () => toggleWindowVisibility(),
-    },
-    { type: "separator" },
-    {
-      label: "Quit",
-      click: () => {
-        app.quit(); // Goodbye cruel world 👋
-      },
-    },
-  ]);
+// Tray menu is managed in tray.js
 
-  tray.setContextMenu(contextMenu);
+// Create or focus the Settings window
+function openSettingsWindow() {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    if (!settingsWindow.isVisible()) settingsWindow.show();
+    settingsWindow.focus();
+    return;
+  }
+
+  settingsWindow = new BrowserWindow({
+    width: 420,
+    height: 360,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    show: true,
+    title: "Settings",
+    parent: mainWindow,
+    modal: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload-settings.js"),
+    },
+  });
+
+  settingsWindow.loadFile(path.join(__dirname, "src", "pages", "settings", "index.html"));
+
+  settingsWindow.on("closed", () => {
+    settingsWindow = null;
+  });
 }
 
-// Get checkbox symbol for settings - Because visual feedback is important
-function getSettingCheckbox(setting) {
-  return setting ? "☑" : "☐"; // TODO: Maybe use better symbols if these don't work on all systems
+// IPC handlers for settings page
+function registerSettingsIpc() {
+  // Return current settings
+  ipcMain.handle("settings:get", async () => {
+    return appSettings;
+  });
+
+  // Update settings (partial update)
+  ipcMain.handle("settings:update", async (_event, partial) => {
+    if (typeof partial !== "object" || partial === null) return appSettings;
+
+    const previous = { ...appSettings };
+    appSettings = {
+      ...appSettings,
+      ...partial,
+      shortcuts: { ...(appSettings.shortcuts || {}), ...(partial.shortcuts || {}) },
+    };
+
+    // Apply side-effects
+    if (previous.alwaysOnTop !== appSettings.alwaysOnTop) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.setAlwaysOnTop(appSettings.alwaysOnTop);
+      }
+    }
+
+    if (previous.scrollSpeed !== appSettings.scrollSpeed) {
+      // No immediate side-effect required beyond using new value
+    }
+
+    // Re-register global shortcuts if changed
+    if (JSON.stringify(previous.shortcuts) !== JSON.stringify(appSettings.shortcuts)) {
+      registerGlobalShortcuts();
+    }
+
+    // Persist settings to disk
+    saveSettingsToDisk(appSettings);
+    if (trayController) trayController.updateTrayMenu();
+    return appSettings;
+  });
+
+  // Restart app on demand
+  ipcMain.handle("app:restart", async () => {
+    app.relaunch();
+    app.exit(0);
+  });
 }
 
-// Toggle always on top - Make your window the boss or let it be humble
+// Register all global shortcuts based on current settings
+function registerGlobalShortcuts() {
+  globalShortcut.unregisterAll();
+
+  const s = appSettings.shortcuts || {};
+
+  if (s.scrollUp) {
+    globalShortcut.register(s.scrollUp, () => { scrollUp(); });
+  }
+  if (s.scrollDown) {
+    globalShortcut.register(s.scrollDown, () => { scrollDown(); });
+  }
+  if (s.toggleLock) {
+    globalShortcut.register(s.toggleLock, () => { toggleAlwaysOnTop(); });
+  }
+  if (s.toggleMinimize) {
+    globalShortcut.register(s.toggleMinimize, () => { toggleMinimizeRestore(); });
+  }
+}
+
+// Toggle always on top
 function toggleAlwaysOnTop() {
   appSettings.alwaysOnTop = !appSettings.alwaysOnTop;
   mainWindow.setAlwaysOnTop(appSettings.alwaysOnTop);
-  updateTrayMenu(); // Refresh menu to show new state
-
-  // TODO: Save settings to file so they persist between app restarts
+  if (trayController) trayController.updateTrayMenu();
 }
 
-// Toggle auto start - For when you want your app to be clingy
+// Toggle auto start (placeholder)
 function toggleAutoStart() {
   appSettings.autoStart = !appSettings.autoStart;
-  updateTrayMenu();
+  if (trayController) trayController.updateTrayMenu();
 
   // TODO: Implement actual auto-start functionality
   // Hint: Use electron-auto-launch package or registry manipulation
 }
 
-// Set scroll speed - Because everyone has different scrolling preferences
+// Set scroll speed
 function setScrollSpeed(speed) {
   appSettings.scrollSpeed = speed;
-  updateTrayMenu();
-
-  // TODO: Save this setting to a config file
+  if (trayController) trayController.updateTrayMenu();
 }
 
-// Toggle window visibility - Hide and seek champion 🙈
+// Toggle window visibility
 function toggleWindowVisibility() {
   if (isAppVisible) {
     mainWindow.hide();
@@ -319,29 +363,14 @@ function toggleWindowVisibility() {
     mainWindow.show();
     isAppVisible = true;
   }
-  updateTrayMenu(); // Update menu text
+  if (trayController) trayController.updateTrayMenu();
 }
 // Setup keyboard shortcuts - Because mouse is for amateurs 🖱️
 function setupKeyboardShortcuts() {
-  // Global shortcuts - work even when app is not focused (power user mode)
-  globalShortcut.register("CommandOrControl+Up", () => {
-    scrollUp();
-  });
+  // Register according to configurable shortcuts
+  registerGlobalShortcuts();
 
-  globalShortcut.register("CommandOrControl+Down", () => {
-    scrollDown();
-  });
-
-  // Simple arrow keys - only work when window is focused
-  globalShortcut.register("Up", () => {
-    scrollUp();
-  });
-
-  globalShortcut.register("Down", () => {
-    scrollDown();
-  });
-
-  // Mouse wheel support - because some people actually use mice
+  // Mouse wheel support
   mainWindow.webContents.on("wheel", (event, delta) => {
     if (delta.deltaY > 0) {
       scrollDown();
@@ -351,16 +380,25 @@ function setupKeyboardShortcuts() {
   });
 }
 
+// Toggle minimize/restore of main window
+function toggleMinimizeRestore() {
+  if (!mainWindow) return;
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+    mainWindow.show();
+    isAppVisible = true;
+  } else {
+    mainWindow.minimize();
+    isAppVisible = false;
+  }
+  if (trayController) trayController.updateTrayMenu();
+}
+
 // App event handlers - The lifecycle of our beautiful creation 🌱
 app.whenReady().then(() => {
+  // Load settings from disk before creating windows
+  appSettings = { ...appSettings, ...loadSettingsFromDisk() };
   createWindow();
-
-  // NEED REVIEW: Delayed tray creation create another tray!!!
-
-  // Give the window a moment to load before creating tray
-  // setTimeout(() => {
-  //   createSystemTray();
-  // }, 1000);
 
   app.on("activate", () => {
     // macOS behavior: recreate window when dock icon is clicked
@@ -379,7 +417,7 @@ app.on("window-all-closed", (event) => {
   if (mainWindow) {
     mainWindow.hide();
     isAppVisible = false;
-    updateTrayMenu();
+    if (trayController) trayController.updateTrayMenu();
   }
 
   // Note: App will only quit when user clicks "Quit" in tray menu
@@ -425,19 +463,6 @@ module.exports = {
   toggleAlwaysOnTop,
 };
 
-/*
- * TODO List for Future You 📝:
- *
- * 1. Create a proper tray icon (16x16 PNG) and put it in assets/tray-icon.png
- * 2. Implement settings persistence (save to JSON file or electron-store)
- * 3. Add auto-start functionality (use electron-auto-launch)
- * 4. Create a settings window with proper UI
- * 5. Add keyboard shortcut customization
- * 6. Implement content source management (add/remove from GUI)
- * 7. Add themes/dark mode support
- * 8. Consider adding content filtering or search
- * 9. Maybe add notification support?
- * 10. Test on different screen resolutions and multi-monitor setups
- *
- * Remember: Good code is like a good joke - if you have to explain it, it's probably bad! 😄
- */
+// Simple JSON persistence for settings
+// settings helpers come from utils/settings.js
+
