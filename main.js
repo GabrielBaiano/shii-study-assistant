@@ -1,8 +1,8 @@
 import { app, BrowserWindow, WebContentsView, screen, globalShortcut, ipcMain } from "electron";
-import path from "path";
 import { initTray } from "./tray.js";
 import { getSettingsFilePath, loadSettingsFromDisk, saveSettingsToDisk } from './utils/settings.js';
 import { buildSources } from './utils/sources.js';
+import { getPath, getPagesPath } from './utils/paths.js';
 
 // Global state (we keep it tidy, promise)
 let mainWindow;
@@ -42,9 +42,9 @@ let CONTENT_Y;
 // Static sources list (edit here to add fixed entries first)
 // Pro tip: keep things minimal; less is more—except for pizza slices.
 const staticSources = [
-  { label: 'Gemini', source: 'file://' + path.join(__dirname, 'src', 'pages', 'gemini', 'index.html') },
+  { label: 'Gemini', source: 'file://' + getPagesPath('gemini', 'index.html') },
 ];
-const placeholderPage = 'file://' + path.join(__dirname, 'src', 'pages', 'placeholder', 'index.html');
+const placeholderPage = 'file://' + getPagesPath('placeholder', 'index.html');
 
 // Calculate window dimensions - Some fancy math to make it look professional
 function calculateDimensions() {
@@ -203,7 +203,7 @@ function createSystemTray() {
   // Load your custom icon - make sure icon.png exists in your project root!
   let trayIconPath;
   try {
-    trayIconPath = path.join(__dirname, "icon.png");
+    trayIconPath = getPath("icon.png");
     // Test if file exists by trying to create image
     const icon = nativeImage.createFromPath(trayIconPath);
     if (icon.isEmpty()) {
@@ -254,11 +254,11 @@ function openSettingsWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload-settings.js"),
+      preload: getPath("preload-settings.js"),
     },
   });
 
-  settingsWindow.loadFile(path.join(__dirname, "src", "pages", "settings", "index.html"));
+  settingsWindow.loadFile(getPagesPath("settings", "index.html"));
 
   settingsWindow.on("closed", () => {
     settingsWindow = null;
@@ -455,7 +455,7 @@ function addNewContent(source) {
 }
 
 // Export useful functions - For when you want to control this from other files
-module.exports = {
+export {
   scrollUp,
   scrollDown,
   addNewContent,

@@ -1,8 +1,8 @@
 // Tray setup lives here so main.js can breathe.
 // Exports a small controller with the created tray and a function to refresh the menu.
 
-import path from 'path';
 import { Tray, Menu, nativeImage } from 'electron';
+import { getPath } from './utils/paths.js';
 
 function initTray({
   getAppSettings,
@@ -19,7 +19,7 @@ function initTray({
     // Try to use the project icon; if not found, Electron will improvise
     let trayIconPath;
     try {
-      trayIconPath = path.join(__dirname, 'icon.png');
+      trayIconPath = getPath('icon.png');
       const icon = nativeImage.createFromPath(trayIconPath);
       tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
     } catch {

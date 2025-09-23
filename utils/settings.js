@@ -3,13 +3,14 @@
 import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
+import { getPath } from './paths.js';
 
 function getSettingsFilePath() {
   try {
     const dir = app.getPath('userData');
     return path.join(dir, 'settings.json');
   } catch {
-    return path.join(__dirname, '..', 'settings.json');
+    return getPath('settings.json');
   }
 }
 
