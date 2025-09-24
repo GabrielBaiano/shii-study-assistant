@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="..">
+      <UniqueIdentifier>{739DB09A-CC57-A953-A6CF-F64FA08E4FA7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:">
+      <UniqueIdentifier>{7B735499-E5DD-1C2B-6C26-70023832A1CF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users">
+      <UniqueIdentifier>{E9F714C1-DA89-54E2-60CF-39FEB20BF756}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri">
+      <UniqueIdentifier>{82F6737D-C48F-6550-FC2E-8D3DF45E6BE0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri\OneDrive">
+      <UniqueIdentifier>{AB638830-36CA-1391-0BE8-C500827E1A7F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri\OneDrive\Documentos">
+      <UniqueIdentifier>{DFF2DF07-8904-C812-A476-46680A10F013}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri\OneDrive\Documentos\GitHub">
+      <UniqueIdentifier>{84E6FEBA-825D-6EBF-DAAC-F202DA6E3F7D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri\OneDrive\Documentos\GitHub\Stealth_APP">
+      <UniqueIdentifier>{4DF139AC-33D9-C5DD-0110-1B0C1DE8A351}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri\OneDrive\Documentos\GitHub\Stealth_APP\node_modules">
+      <UniqueIdentifier>{56DF7A98-063D-FB9D-485C-089023B4C16A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri\OneDrive\Documentos\GitHub\Stealth_APP\node_modules\node-gyp">
+      <UniqueIdentifier>{77348C0E-2034-7791-74D5-63C077DF5A3B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="C:\Users\gabri\OneDrive\Documentos\GitHub\Stealth_APP\node_modules\node-gyp\src">
+      <UniqueIdentifier>{8CDEE807-BC53-E450-C8B8-4DEBB66742D4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="..">
+      <UniqueIdentifier>{739DB09A-CC57-A953-A6CF-F64FA08E4FA7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\affinity.cpp">
+      <Filter>..</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gabri\OneDrive\Documentos\GitHub\Stealth_APP\node_modules\node-gyp\src\win_delay_load_hook.cc">
+      <Filter>C:\Users\gabri\OneDrive\Documentos\GitHub\Stealth_APP\node_modules\node-gyp\src</Filter>
+    </ClCompile>
+    <None Include="..\binding.gyp">
+      <Filter>..</Filter>
+    </None>
+  </ItemGroup>
+</Project>

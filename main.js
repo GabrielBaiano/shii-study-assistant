@@ -3,6 +3,16 @@ const fs = require("fs");
 const path = require("path");
 const { defaultBanners, bannerSettings } = require("./src/banners/banners-config");
 
+// Importar módulo stealth nativo
+let stealthManager;
+try {
+  stealthManager = require("./src/native/index.js");
+  console.log("✅ Módulo stealth nativo carregado com sucesso");
+} catch (error) {
+  console.log("⚠️ Módulo stealth não disponível:", error.message);
+  stealthManager = null;
+}
+
 // Global state
 let mainWindow;
 let webContentViews = [];
@@ -36,6 +46,11 @@ let appSettings = {
     height: 30, // altura total do banner (ocupa todo o espaço)
     containerHeight: 30, // espaço total que o banner pode consumir
     theme: 'default'
+  },
+  stealth: {
+    enabled: true, // Status do modo stealth (ativado por padrão)
+    autoStart: true, // Ativar automaticamente ao iniciar o app
+    showInTray: true // Mostrar status no tray
   },
 };
 
@@ -169,6 +184,12 @@ function createWindow() {
   
   // Register IPC handlers for settings
   registerSettingsIpc();
+  
+  // Register IPC handlers for stealth
+  registerStealthIpc();
+  
+  // Register stealth API for settings page
+  registerStealthAPI();
   
   // Mouse wheel support
   mainWindow.webContents.on("wheel", (event, delta) => {
@@ -401,8 +422,23 @@ function createSystemTray() {
 function updateTrayMenu() {
   const checkbox = (on) => (on ? '☑' : '☐');
   
+  // Status do stealth
+  let stealthStatus = '❌ Desconhecido';
+  if (stealthManager) {
+    if (appSettings.stealth.enabled) {
+      const windowCount = stealthManager.getStealthedWindowsCount();
+      stealthStatus = `🕵️ Ativo (${windowCount} janelas)`;
+    } else {
+      stealthStatus = '👁️ Inativo';
+    }
+  } else {
+    stealthStatus = '⚠️ Indisponível';
+  }
+  
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Open Settings', click: () => openSettingsWindow() },
+    { type: 'separator' },
+    { label: `Stealth Mode: ${stealthStatus}`, enabled: false },
     { type: 'separator' },
     {
       label: 'Settings',
@@ -638,6 +674,24 @@ app.whenReady().then(() => {
     appSettings.banners.containerHeight = 30;
     saveSettingsToDisk(appSettings);
   }
+
+  // Initialize stealth settings if not present
+  if (!appSettings.stealth) {
+    appSettings.stealth = {
+      enabled: true, // Ativado por padrão
+      autoStart: true, // Auto-start por padrão
+      showInTray: true
+    };
+    saveSettingsToDisk(appSettings);
+  }
+
+  // Auto-start stealth if enabled
+  if (appSettings.stealth.enabled && stealthManager) {
+    setTimeout(async () => {
+      console.log('🕵️ Ativando stealth automaticamente...');
+      await enableStealthMode();
+    }, 2000); // Delay maior para garantir que a janela esteja pronta
+  }
   
   console.log('Final appSettings:', appSettings);
   
@@ -664,6 +718,221 @@ app.on("before-quit", () => {
   globalShortcut.unregisterAll();
 });
 
+// ===== FUNÇÕES STEALTH =====
+
+// Registrar handlers IPC para stealth
+function registerStealthIpc() {
+  if (!stealthManager) {
+    console.log("⚠️ Módulo stealth não disponível, handlers IPC não registrados");
+    return;
+  }
+
+  // Ativar modo stealth
+  ipcMain.handle('stealth:enable', async (event) => {
+    try {
+      if (!mainWindow) {
+        throw new Error('Janela principal não encontrada');
+      }
+
+      // Obter handle da janela do Electron
+      const windowHandle = mainWindow.getNativeWindowHandle();
+      const result = stealthManager.enableStealthMode(windowHandle);
+      
+      console.log('🕵️ Modo stealth ativado:', result);
+      return { success: result, message: result ? 'Modo stealth ativado' : 'Falha ao ativar modo stealth' };
+    } catch (error) {
+      console.error('❌ Erro ao ativar modo stealth:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  // Desativar modo stealth
+  ipcMain.handle('stealth:disable', async (event) => {
+    try {
+      const result = stealthManager.disableStealthMode();
+      
+      console.log('👁️ Modo stealth desativado:', result);
+      return { success: result, message: result ? 'Modo stealth desativado' : 'Falha ao desativar modo stealth' };
+    } catch (error) {
+      console.error('❌ Erro ao desativar modo stealth:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  // Verificar status do modo stealth
+  ipcMain.handle('stealth:status', async (event) => {
+    try {
+      const isActive = stealthManager.isStealthActive();
+      return { 
+        success: true, 
+        isActive: isActive,
+        message: isActive ? 'Modo stealth ativo' : 'Modo stealth inativo'
+      };
+    } catch (error) {
+      console.error('❌ Erro ao verificar status do stealth:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  // Obter janela por título
+  ipcMain.handle('stealth:getWindowByTitle', async (event, title) => {
+    try {
+      const handle = stealthManager.getWindowByTitle(title);
+      return { 
+        success: true, 
+        handle: handle,
+        message: handle ? 'Janela encontrada' : 'Janela não encontrada'
+      };
+    } catch (error) {
+      console.error('❌ Erro ao obter janela por título:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  console.log("✅ Handlers IPC do stealth registrados");
+}
+
+// Registrar API de stealth para a página de configurações
+function registerStealthAPI() {
+  if (!stealthManager) {
+    console.log("⚠️ Módulo stealth não disponível, API não registrada");
+    return;
+  }
+
+  // Ativar stealth
+  ipcMain.handle('stealth:api:enable', async (event) => {
+    try {
+      if (!mainWindow) {
+        throw new Error('Janela principal não encontrada');
+      }
+
+      const windowHandle = mainWindow.getNativeWindowHandle();
+      const result = stealthManager.enableStealthMode(windowHandle);
+      
+      if (result) {
+        appSettings.stealth.enabled = true;
+        saveSettingsToDisk(appSettings);
+        updateTrayMenu(); // Atualizar tray
+        console.log('🕵️ Stealth ativado via API');
+      }
+      
+      return { success: result, message: result ? 'Stealth ativado' : 'Falha ao ativar stealth' };
+    } catch (error) {
+      console.error('❌ Erro ao ativar stealth via API:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  // Desativar stealth
+  ipcMain.handle('stealth:api:disable', async (event) => {
+    try {
+      const result = stealthManager.disableStealthMode();
+      
+      if (result) {
+        appSettings.stealth.enabled = false;
+        saveSettingsToDisk(appSettings);
+        updateTrayMenu(); // Atualizar tray
+        console.log('👁️ Stealth desativado via API');
+      }
+      
+      return { success: result, message: result ? 'Stealth desativado' : 'Falha ao desativar stealth' };
+    } catch (error) {
+      console.error('❌ Erro ao desativar stealth via API:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  console.log("✅ API de stealth registrada para configurações");
+}
+
+// Função para ativar modo stealth (pode ser chamada externamente)
+async function enableStealthMode() {
+  if (!stealthManager) {
+    console.log("⚠️ Módulo stealth não disponível");
+    return false;
+  }
+
+  try {
+    // Coletar títulos de todas as views
+    const viewTitles = [];
+    
+    // Adicionar título da janela principal
+    if (mainWindow) {
+      const mainTitle = mainWindow.getTitle();
+      if (mainTitle) {
+        viewTitles.push(mainTitle);
+        console.log("🔍 Título da janela principal:", mainTitle);
+      }
+    }
+    
+    // Adicionar títulos das views de conteúdo
+    webContentViews.forEach((view, index) => {
+      if (view && view.webContents) {
+        const viewTitle = `View ${index + 1}`; // Título genérico para views
+        viewTitles.push(viewTitle);
+        console.log(`🔍 Título da view ${index + 1}:`, viewTitle);
+      }
+    });
+    
+    // Adicionar títulos dos banners
+    bannerViews.forEach((banner, index) => {
+      if (banner && banner.view) {
+        const bannerTitle = `Banner ${index + 1}`; // Título genérico para banners
+        viewTitles.push(bannerTitle);
+        console.log(`🔍 Título do banner ${index + 1}:`, bannerTitle);
+      }
+    });
+
+    if (viewTitles.length === 0) {
+      console.log("⚠️ Nenhuma view encontrada para aplicar stealth");
+      return false;
+    }
+
+    console.log(`🕵️ Aplicando stealth em ${viewTitles.length} janelas...`);
+    
+    const result = stealthManager.applyStealthToMultipleWindows(viewTitles);
+    console.log("🕵️ Resultado do stealth:", result);
+    
+    if (result) {
+      appSettings.stealth.enabled = true;
+      saveSettingsToDisk(appSettings);
+      updateTrayMenu();
+      console.log(`✅ Stealth ativado em ${stealthManager.getStealthedWindowsCount()} janelas!`);
+    } else {
+      console.log("❌ Falha ao ativar stealth");
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao ativar modo stealth:", error.message);
+    return false;
+  }
+}
+
+// Função para desativar modo stealth (pode ser chamada externamente)
+async function disableStealthMode() {
+  if (!stealthManager) {
+    console.log("⚠️ Módulo stealth não disponível");
+    return false;
+  }
+
+  try {
+    const result = stealthManager.removeStealthFromMultipleWindows();
+    
+    if (result) {
+      appSettings.stealth.enabled = false;
+      saveSettingsToDisk(appSettings);
+      updateTrayMenu();
+      console.log("✅ Stealth desativado de todas as janelas!");
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("❌ Erro ao desativar modo stealth:", error.message);
+    return false;
+  }
+}
+
 // Export useful functions
 module.exports = {
   scrollUp,
@@ -671,4 +940,6 @@ module.exports = {
   addNewContent,
   toggleWindowVisibility,
   toggleAlwaysOnTop,
+  enableStealthMode,
+  disableStealthMode,
 };

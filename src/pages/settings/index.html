@@ -33,6 +33,19 @@
     </div>
 
     <div class="section">
+      <h3 style="margin: 0 0 12px; font-size: 14px; color: #374151;">🕵️ Stealth Mode</h3>
+      <div class="row">
+        <label for="stealthEnabled">Enable Stealth Mode</label>
+        <input id="stealthEnabled" type="checkbox" />
+      </div>
+      <div class="row">
+        <label for="stealthAutoStart">Auto-start Stealth</label>
+        <input id="stealthAutoStart" type="checkbox" />
+      </div>
+      <div class="hint">Stealth mode hides the window from screen sharing (Teams, Zoom, Discord, OBS, etc.)</div>
+    </div>
+
+    <div class="section">
       <div class="row">
         <label for="scrollSpeed">Scroll speed</label>
         <select id="scrollSpeed">
@@ -98,6 +111,8 @@
       const checkboxAlwaysOnTop = document.getElementById('alwaysOnTop');
       const checkboxAutoStart = document.getElementById('autoStart');
       const selectScroll = document.getElementById('scrollSpeed');
+      const checkboxStealthEnabled = document.getElementById('stealthEnabled');
+      const checkboxStealthAutoStart = document.getElementById('stealthAutoStart');
       const closeBtn = document.getElementById('closeBtn');
       const remapScrollUpBtn = document.getElementById('remapScrollUp');
       const remapScrollDownBtn = document.getElementById('remapScrollDown');
@@ -118,6 +133,8 @@
           checkboxAlwaysOnTop.checked = !!s.alwaysOnTop;
           checkboxAutoStart.checked = !!s.autoStart;
           selectScroll.value = String(s.scrollSpeed || 100);
+          checkboxStealthEnabled.checked = !!(s.stealth && s.stealth.enabled);
+          checkboxStealthAutoStart.checked = !!(s.stealth && s.stealth.autoStart);
           const sh = s.shortcuts || {};
           labelScrollUp.textContent = sh.scrollUp || "";
           labelScrollDown.textContent = sh.scrollDown || "";
@@ -138,6 +155,33 @@
       checkboxAlwaysOnTop.addEventListener('change', () => update({ alwaysOnTop: checkboxAlwaysOnTop.checked }));
       checkboxAutoStart.addEventListener('change', () => update({ autoStart: checkboxAutoStart.checked }));
       selectScroll.addEventListener('change', () => update({ scrollSpeed: Number(selectScroll.value) }));
+      
+      // Stealth controls
+      checkboxStealthEnabled.addEventListener('change', async () => {
+        const enabled = checkboxStealthEnabled.checked;
+        await update({ 
+          stealth: { 
+            enabled: enabled,
+            autoStart: checkboxStealthAutoStart.checked,
+            showInTray: true
+          }
+        });
+        
+        // Ativar/desativar stealth imediatamente
+        if (enabled) {
+          await window.stealthAPI.enable();
+        } else {
+          await window.stealthAPI.disable();
+        }
+      });
+      
+      checkboxStealthAutoStart.addEventListener('change', () => update({ 
+        stealth: { 
+          enabled: checkboxStealthEnabled.checked,
+          autoStart: checkboxStealthAutoStart.checked,
+          showInTray: true
+        }
+      }));
 
       closeBtn.addEventListener('click', () => window.close());
       restartBtn.addEventListener('click', () => window.settingsAPI.restart());
@@ -243,9 +287,15 @@
         });
       });
 
+      // Expor API de stealth para a página
+      window.stealthAPI = {
+        enable: () => window.electronAPI.invoke('stealth:api:enable'),
+        disable: () => window.electronAPI.invoke('stealth:api:disable')
+      };
+
       loadSettings();
     </script>
   </body>
-  </html>
+</html>
 
 

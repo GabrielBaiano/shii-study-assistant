@@ -1,0 +1,10 @@
+{
+  "name": "affinity-addon",
+  "version": "1.0.0",
+  "description": "Native addon for Windows Display Affinity",
+  "main": "index.js",
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  },
+  "gypfile": true
+}

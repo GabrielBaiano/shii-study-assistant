@@ -16,6 +16,8 @@
     "@testing-library/dom": "^10.4.0",
     "electron": "^38.1.2",
     "jsdom": "^25.0.0",
+    "node-addon-api": "^8.5.0",
+    "node-gyp": "^11.4.2",
     "vitest": "^2.1.1"
   },
   "build": {
