@@ -1,10 +1,12 @@
 const { app, BrowserWindow, WebContentsView, screen, globalShortcut, ipcMain, Tray, Menu, nativeImage } = require("electron");
 const fs = require("fs");
 const path = require("path");
+const { defaultBanners, bannerSettings } = require("./src/banners/banners-config");
 
 // Global state
 let mainWindow;
 let webContentViews = [];
+let bannerViews = []; // Array para armazenar os banners
 let offset = 0;
 let targetOffset = 0;
 let scrolling = false;
@@ -28,6 +30,13 @@ let appSettings = {
     minimize: "CommandOrControl+Alt+M",
   },
   userSites: [],
+  banners: {
+    enabled: true,
+    enabledBanners: ['gabriel-banner', 'coffee-banner'], // IDs dos banners habilitados
+    height: 30, // altura total do banner (ocupa todo o espaço)
+    containerHeight: 30, // espaço total que o banner pode consumir
+    theme: 'default'
+  },
 };
 
 // Size and positioning configs
@@ -146,6 +155,9 @@ function createWindow() {
     loadContent(view, entry);
   });
 
+  // Create banner views between content views
+  createBannerViews(sources);
+
   mainWindow.show();
   
   // Setup keyboard shortcuts
@@ -179,15 +191,94 @@ function loadContent(view, entry) {
   }
 }
 
-// Reposition all views
+// Create banner views between content views
+function createBannerViews(sources) {
+  if (!appSettings.banners.enabled || !bannerSettings.globalEnabled) {
+    return;
+  }
+
+  const enabledBanners = defaultBanners.filter(banner => 
+    banner.enabled && appSettings.banners.enabledBanners.includes(banner.id)
+  );
+
+  if (enabledBanners.length === 0) return;
+
+  let bannerIndex = 0;
+  
+  // Adicionar banners entre as views baseado na frequência
+  for (let i = 0; i < sources.length - 1; i++) {
+    const banner = enabledBanners[bannerIndex % enabledBanners.length];
+    
+    // Verificar se deve mostrar o banner baseado na frequência
+    if (banner.frequency > 0 && (i + 1) % banner.frequency === 0) {
+      const bannerView = new WebContentsView({
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false,
+        },
+      });
+
+      // Posição Y: depois da view atual + altura do banner acumulada
+      const currentViewY = (i + 1) * CONTENT_HEIGHT;
+      const bannerY = currentViewY + (bannerViews.length * appSettings.banners.height);
+
+      bannerView.setBounds({
+        x: 0,
+        y: bannerY,
+        width: CONTENT_WIDTH,
+        height: appSettings.banners.containerHeight || appSettings.banners.height,
+      });
+
+      mainWindow.contentView.addChildView(bannerView);
+      bannerViews.push({
+        view: bannerView,
+        config: banner,
+        position: i + 1
+      });
+
+      // Carregar conteúdo do banner
+      if (banner.path.startsWith("file://")) {
+        bannerView.webContents.loadFile(banner.path.replace("file://", ""));
+      } else {
+        bannerView.webContents.loadURL(banner.path);
+      }
+
+      bannerIndex++;
+    }
+  }
+}
+
+// Reposition all views including banners
 function repositionAllCardViews() {
+  let totalBannerHeight = 0;
+  
   webContentViews.forEach((view, index) => {
     if (!view.webContents.isDestroyed()) {
       view.setBounds({
         x: 0,
-        y: index * CONTENT_HEIGHT + offset,
+        y: index * CONTENT_HEIGHT + offset + totalBannerHeight,
         width: CONTENT_WIDTH,
         height: CONTENT_HEIGHT,
+      });
+      
+      // Adicionar altura dos banners que vêm após esta view
+      const bannersAfterThisView = bannerViews.filter(banner => banner.position === index + 1);
+      totalBannerHeight += bannersAfterThisView.length * (appSettings.banners.containerHeight || appSettings.banners.height);
+    }
+  });
+
+  // Reposicionar banners
+  bannerViews.forEach((bannerData, index) => {
+    if (!bannerData.view.webContents.isDestroyed()) {
+      const viewsBeforeBanner = bannerData.position;
+      const bannersBeforeThis = bannerViews.filter((b, i) => i < index);
+      const bannerHeightBefore = bannersBeforeThis.length * (appSettings.banners.containerHeight || appSettings.banners.height);
+      
+      bannerData.view.setBounds({
+        x: 0,
+        y: viewsBeforeBanner * CONTENT_HEIGHT + offset + bannerHeightBefore,
+        width: CONTENT_WIDTH,
+        height: appSettings.banners.containerHeight || appSettings.banners.height,
       });
     }
   });
@@ -266,7 +357,9 @@ function animateScroll() {
 
 // Scroll down
 function scrollDown() {
-  const totalHeight = webContentViews.length * CONTENT_HEIGHT;
+  const totalViewsHeight = webContentViews.length * CONTENT_HEIGHT;
+  const totalBannersHeight = bannerViews.length * (appSettings.banners.containerHeight || appSettings.banners.height);
+  const totalHeight = totalViewsHeight + totalBannersHeight;
   const minOffset = Math.min(0, CONTENT_HEIGHT - totalHeight);
   targetOffset -= appSettings.scrollSpeed;
   if (targetOffset < minOffset) targetOffset = minOffset;
@@ -528,8 +621,23 @@ app.whenReady().then(() => {
   if (!diskSettings.shortcuts.lock && !diskSettings.shortcuts.toggleLock) diskSettings.shortcuts.lock = "CommandOrControl+Alt+L";
   if (!diskSettings.shortcuts.minimize && !diskSettings.shortcuts.toggleMinimize) diskSettings.shortcuts.minimize = "CommandOrControl+Alt+M";
   if (!diskSettings.userSites) diskSettings.userSites = [];
+  if (!diskSettings.banners) diskSettings.banners = {
+    enabled: true,
+    enabledBanners: ['gabriel-banner', 'coffee-banner'],
+    height: 30,
+    containerHeight: 30,
+    theme: 'default'
+  };
   
   appSettings = { ...appSettings, ...diskSettings };
+  
+  // Forçar atualização dos banners para as novas configurações
+  if (appSettings.banners && (appSettings.banners.height === 10 || appSettings.banners.height === 15)) {
+    appSettings.banners.height = 30;
+    appSettings.banners.containerHeight = 30;
+    saveSettingsToDisk(appSettings);
+  }
+  
   console.log('Final appSettings:', appSettings);
   
   createWindow();
