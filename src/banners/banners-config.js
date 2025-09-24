@@ -1,11 +1,27 @@
 // Sistema de configuração de banners publicitários
 // Este arquivo permite customizar completamente os banners do app
 
+const { app } = require('electron');
+const path = require('path');
+
+// Helper function to get correct path for both dev and build
+function getAppPath(relativePath) {
+  // In development, __dirname points to the project root
+  // In build, __dirname points to the app.asar directory
+  if (app && app.isPackaged) {
+    // In packaged app, resources are in app.asar.unpacked or in the same directory
+    return path.join(process.resourcesPath, 'app', relativePath);
+  } else {
+    // In development, use __dirname
+    return path.join(__dirname, relativePath);
+  }
+}
+
 const defaultBanners = [
     {
         id: 'gabriel-banner',
         name: 'Made by GabrielBaiano',
-        path: 'file://' + require('path').join(__dirname, 'gabriel-banner', 'index.html'),
+        path: 'file://' + getAppPath(path.join('src', 'banners', 'gabriel-banner', 'index.html')),
         enabled: true,
         height: 20, // altura em pixels
         position: 'between_views', // 'between_views', 'top', 'bottom'
@@ -20,7 +36,7 @@ const defaultBanners = [
     {
         id: 'coffee-banner',
         name: 'Buy me a coffee',
-        path: 'file://' + require('path').join(__dirname, 'coffee-banner', 'index.html'),
+        path: 'file://' + getAppPath(path.join('src', 'banners', 'coffee-banner', 'index.html')),
         enabled: true,
         height: 20,
         position: 'between_views',

@@ -3,10 +3,24 @@ const fs = require("fs");
 const path = require("path");
 const { defaultBanners, bannerSettings } = require("./src/banners/banners-config");
 
+// Helper function to get correct path for both dev and build
+function getAppPath(relativePath) {
+  // In development, __dirname points to the project root
+  // In build, __dirname points to the app.asar directory
+  if (app.isPackaged) {
+    // In packaged app, resources are in app.asar.unpacked or in the same directory
+    return path.join(process.resourcesPath, 'app', relativePath);
+  } else {
+    // In development, use __dirname
+    return path.join(__dirname, relativePath);
+  }
+}
+
 // Importar módulo stealth nativo
 let stealthManager;
 try {
-  stealthManager = require("./src/native/index.js");
+  const stealthPath = getAppPath(path.join("src", "native", "index.js"));
+  stealthManager = require(stealthPath);
   console.log("✅ Módulo stealth nativo carregado com sucesso");
 } catch (error) {
   console.log("⚠️ Módulo stealth não disponível:", error.message);
@@ -62,10 +76,10 @@ let CONTENT_Y;
 
 // Static sources list (edit here to add fixed entries first)
 const staticSources = [
-  { label: 'Gemini', source: 'file://' + path.join(__dirname, 'src', 'pages', 'gemini', 'index.html') },
-  { label: 'Pomodoro', source: 'file://' + path.join(__dirname, 'src', 'pages', 'pomodoro', 'index.html') },
+  { label: 'Gemini', source: 'file://' + getAppPath(path.join('src', 'pages', 'gemini', 'index.html')) },
+  { label: 'Pomodoro', source: 'file://' + getAppPath(path.join('src', 'pages', 'pomodoro', 'index.html')) },
 ];
-const placeholderPage = 'file://' + path.join(__dirname, 'src', 'pages', 'placeholder', 'index.html');
+const placeholderPage = 'file://' + getAppPath(path.join('src', 'pages', 'placeholder', 'index.html'));
 
 // Settings helpers
 function getSettingsFilePath() {
@@ -399,7 +413,7 @@ function scrollUp() {
 function createSystemTray() {
   let trayIconPath;
   try {
-    trayIconPath = path.join(__dirname, "icon.png");
+    trayIconPath = getAppPath("icon.png");
     const icon = nativeImage.createFromPath(trayIconPath);
     if (icon.isEmpty()) {
       throw new Error("Icon file not found or invalid");
@@ -494,11 +508,11 @@ function openSettingsWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload-settings.js"),
+      preload: getAppPath("preload-settings.js"),
     },
   });
 
-  settingsWindow.loadFile(path.join(__dirname, "src", "pages", "settings", "index.html"));
+  settingsWindow.loadFile(getAppPath(path.join("src", "pages", "settings", "index.html")));
 
   settingsWindow.on("closed", () => {
     settingsWindow = null;
