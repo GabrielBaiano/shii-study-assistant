@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.5s ease;
+            overflow: hidden;
+            position: relative;
+        }
+
+        body.focus {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+        }
+
+        body.break {
+            background: linear-gradient(135deg, #a8edea 0%, #74b9ff 100%);
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+            padding: 2vh;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .time-display {
+            font-size: clamp(3rem, 12vw, 8rem);
+            font-weight: 300;
+            color: #4a4a4a;
+            margin-bottom: 1vh;
+            letter-spacing: -0.02em;
+        }
+
+        .session-type {
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            color: #666;
+            margin-bottom: 4vh;
+            font-weight: 400;
+        }
+
+        .controls {
+            display: flex;
+            gap: 2vw;
+            justify-content: center;
+            margin-bottom: 4vh;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #4a4a4a;
+            color: white;
+            border: none;
+            padding: clamp(0.8rem, 3vw, 1.2rem) clamp(1.5rem, 6vw, 2.5rem);
+            border-radius: 50px;
+            font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            min-width: 120px;
+        }
+
+        .btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+
+        .btn.pause {
+            background: #ff6b6b;
+        }
+
+        .btn.pause:hover {
+            background: #ff5252;
+        }
+
+        .btn.reset {
+            background: #666;
+        }
+
+        .btn.reset:hover {
+            background: #555;
+        }
+
+        .session-menu {
+            display: flex;
+            justify-content: center;
+            gap: 1vw;
+            margin-bottom: 3vh;
+            flex-wrap: wrap;
+        }
+
+        .session-btn {
+            background: rgba(255, 255, 255, 0.3);
+            color: #4a4a4a;
+            border: 2px solid rgba(74, 74, 74, 0.3);
+            padding: clamp(0.4rem, 2vw, 0.8rem) clamp(0.8rem, 3vw, 1.2rem);
+            border-radius: 25px;
+            font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            min-width: 60px;
+        }
+
+        .session-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .session-btn.active {
+            background: #4a4a4a;
+            color: white;
+            border-color: #4a4a4a;
+        }
+
+        .session-btn.active:hover {
+            background: #333;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 3vh;
+            font-size: clamp(0.8rem, 3vw, 1rem);
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5vh;
+        }
+
+        .stat-number {
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            font-weight: 600;
+            color: #4a4a4a;
+        }
+
+        .tomatoes-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 30vh;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .tomato {
+            position: absolute;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            animation: float 3s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        .tomato.golden {
+            font-size: clamp(2rem, 5vw, 3rem);
+            filter: drop-shadow(0 0 10px gold);
+        }
+
+        .tomato.exploded {
+            animation: explode 0.5s ease-out forwards;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) rotate(180deg); opacity: 0; }
+        }
+
+        .progress-ring {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: clamp(200px, 40vw, 350px);
+            height: clamp(200px, 40vw, 350px);
+            z-index: 5;
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 3;
+        }
+
+        .progress-ring .progress {
+            stroke: #4a4a4a;
+            stroke-dasharray: 0 628;
+            transition: stroke-dasharray 1s ease;
+        }
+
+        @media (max-height: 500px) {
+            .container { padding: 1vh; }
+            .time-display { margin-bottom: 0.5vh; }
+            .session-type { margin-bottom: 2vh; }
+            .controls { margin-bottom: 2vh; }
+            .stats { margin-top: 1vh; }
+        }
+
+        @media (max-width: 300px) {
+            .btn { min-width: 80px; }
+            .controls { gap: 1vw; }
+        }
+    </style>
+</head>
+<body class="focus">
+    <svg class="progress-ring">
+        <circle cx="50%" cy="50%" r="100" class="track"></circle>
+        <circle cx="50%" cy="50%" r="100" class="progress"></circle>
+    </svg>
+
+    <div class="container">
+        <div class="time-display" id="timeDisplay">25:00</div>
+        <div class="session-type" id="sessionType">Foco</div>
+        
+        <div class="session-menu">
+            <button class="session-btn active" data-session="focus">Foco</button>
+            <button class="session-btn" data-session="shortBreak">Pausa</button>
+            <button class="session-btn" data-session="longBreak">Pausa +</button>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="startBtn">Começar Foco</button>
+            <button class="btn pause" id="pauseBtn" style="display: none;">Pausar</button>
+            <button class="btn reset" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number" id="focusCount">0</div>
+                <div>Focos</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="breakCount">0</div>
+                <div>Breaks</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="goldenCount">0</div>
+                <div>Dourados</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tomatoes-container" id="tomatoesContainer"></div>
+
+    <script>
+        class PomodoroTimer {
+            constructor() {
+                this.focusTime = 25 * 60; // 25 minutos
+                this.shortBreak = 5 * 60;  // 5 minutos
+                this.longBreak = 15 * 60;  // 15 minutos
+                
+                this.currentTime = this.focusTime;
+                this.isRunning = false;
+                this.currentSession = 'focus'; // 'focus', 'shortBreak', 'longBreak'
+                this.completedFocus = 0;
+                this.completedBreaks = 0;
+                this.goldenTomatoes = 0;
+                this.consecutiveTime = 0; // Para rastrear 1 hora seguida
+                
+                this.interval = null;
+                this.audioContext = null;
+                
+                this.initElements();
+                this.initAudio();
+                this.bindEvents();
+                this.updateDisplay();
+            }
+
+            initElements() {
+                this.timeDisplay = document.getElementById('timeDisplay');
+                this.sessionType = document.getElementById('sessionType');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.focusCount = document.getElementById('focusCount');
+                this.breakCount = document.getElementById('breakCount');
+                this.goldenCount = document.getElementById('goldenCount');
+                this.tomatoesContainer = document.getElementById('tomatoesContainer');
+                this.progressCircle = document.querySelector('.progress');
+                this.sessionBtns = document.querySelectorAll('.session-btn');
+            }
+
+            initAudio() {
+                // Criar AudioContext para o som da campainha
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    console.log('Audio not supported');
+                }
+            }
+
+            playBellSound() {
+                if (!this.audioContext) return;
+                
+                const oscillator = this.audioContext.createOscillator();
+                const gainNode = this.audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(this.audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(400, this.audioContext.currentTime + 0.5);
+                
+                gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+                
+                oscillator.start(this.audioContext.currentTime);
+                oscillator.stop(this.audioContext.currentTime + 0.5);
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+                
+                // Event listeners para os botões de sessão
+                this.sessionBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        if (!this.isRunning) {
+                            this.changeSession(btn.dataset.session);
+                        }
+                    });
+                });
+            }
+
+            start() {
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                
+                this.isRunning = true;
+                this.startBtn.style.display = 'none';
+                this.pauseBtn.style.display = 'inline-block';
+                
+                this.interval = setInterval(() => {
+                    this.currentTime--;
+                    this.consecutiveTime++;
+                    this.updateDisplay();
+                    
+                    if (this.currentTime <= 0) {
+                        this.completeSession();
+                    }
+                }, 1000);
+            }
+
+            pause() {
+                this.isRunning = false;
+                this.startBtn.style.display = 'inline-block';
+                this.pauseBtn.style.display = 'none';
+                clearInterval(this.interval);
+                
+                // Explodir tomate se pausar durante foco
+                if (this.currentSession === 'focus') {
+                    this.explodeTomato();
+                }
+                
+                this.consecutiveTime = 0; // Reset tempo consecutivo
+            }
+
+            reset() {
+                this.pause();
+                this.currentSession = 'focus';
+                this.currentTime = this.focusTime;
+                this.consecutiveTime = 0;
+                this.updateDisplay();
+                this.updateBackground();
+                this.updateSessionLabel();
+                this.updateButton();
+                this.updateActiveSessionBtn();
+            }
+
+            changeSession(sessionType) {
+                if (this.isRunning) return; // Não permite mudança durante execução
+                
+                this.currentSession = sessionType;
+                this.consecutiveTime = 0; // Reset tempo consecutivo ao trocar manualmente
+                
+                switch(sessionType) {
+                    case 'focus':
+                        this.currentTime = this.focusTime;
+                        break;
+                    case 'shortBreak':
+                        this.currentTime = this.shortBreak;
+                        break;
+                    case 'longBreak':
+                        this.currentTime = this.longBreak;
+                        break;
+                }
+                
+                this.updateDisplay();
+                this.updateBackground();
+                this.updateSessionLabel();
+                this.updateButton();
+                this.updateActiveSessionBtn();
+            }
+
+            updateActiveSessionBtn() {
+                this.sessionBtns.forEach(btn => {
+                    if (btn.dataset.session === this.currentSession) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
+
+            completeSession() {
+                this.playBellSound();
+                clearInterval(this.interval);
+                this.isRunning = false;
+                
+                if (this.currentSession === 'focus') {
+                    this.completedFocus++;
+                    this.addTomato();
+                    
+                    // Verificar se completou 1 hora (3600 segundos)
+                    if (this.consecutiveTime >= 3600) {
+                        this.goldenTomatoes++;
+                        this.addGoldenTomato();
+                        this.consecutiveTime = 0;
+                    }
+                    
+                    // Decidir próximo break
+                    if (this.completedFocus % 4 === 0) {
+                        this.currentSession = 'longBreak';
+                        this.currentTime = this.longBreak;
+                    } else {
+                        this.currentSession = 'shortBreak';
+                        this.currentTime = this.shortBreak;
+                    }
+                } else {
+                    this.completedBreaks++;
+                    this.currentSession = 'focus';
+                    this.currentTime = this.focusTime;
+                }
+                
+                this.updateDisplay();
+                this.updateBackground();
+                this.updateSessionLabel();
+                this.updateButton();
+                this.updateStats();
+                this.updateActiveSessionBtn();
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.currentTime / 60);
+                const seconds = this.currentTime % 60;
+                this.timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Atualizar círculo de progresso
+                const totalTime = this.currentSession === 'focus' ? this.focusTime : 
+                                 this.currentSession === 'shortBreak' ? this.shortBreak : this.longBreak;
+                const progress = ((totalTime - this.currentTime) / totalTime) * 628;
+                this.progressCircle.style.strokeDasharray = `${progress} 628`;
+            }
+
+            updateBackground() {
+                if (this.currentSession === 'focus') {
+                    document.body.className = 'focus';
+                } else {
+                    document.body.className = 'break';
+                }
+            }
+
+            updateSessionLabel() {
+                const labels = {
+                    'focus': 'Foco',
+                    'shortBreak': 'Pausa Curta',
+                    'longBreak': 'Pausa Longa'
+                };
+                this.sessionType.textContent = labels[this.currentSession];
+            }
+
+            updateButton() {
+                const buttonTexts = {
+                    'focus': 'Começar Foco',
+                    'shortBreak': 'Começar Pausa',
+                    'longBreak': 'Começar Pausa'
+                };
+                this.startBtn.textContent = buttonTexts[this.currentSession];
+                this.startBtn.style.display = 'inline-block';
+                this.pauseBtn.style.display = 'none';
+            }
+
+            updateStats() {
+                this.focusCount.textContent = this.completedFocus;
+                this.breakCount.textContent = this.completedBreaks;
+                this.goldenCount.textContent = this.goldenTomatoes;
+            }
+
+            addTomato() {
+                const tomato = document.createElement('div');
+                tomato.className = 'tomato';
+                tomato.textContent = '🍅';
+                tomato.style.left = Math.random() * 80 + 10 + '%';
+                tomato.style.bottom = Math.random() * 20 + '%';
+                tomato.style.animationDelay = Math.random() * 2 + 's';
+                this.tomatoesContainer.appendChild(tomato);
+            }
+
+            addGoldenTomato() {
+                const tomato = document.createElement('div');
+                tomato.className = 'tomato golden';
+                tomato.textContent = '🥇';
+                tomato.style.left = Math.random() * 80 + 10 + '%';
+                tomato.style.bottom = Math.random() * 20 + 10 + '%';
+                tomato.style.animationDelay = Math.random() * 2 + 's';
+                this.tomatoesContainer.appendChild(tomato);
+            }
+
+            explodeTomato() {
+                const tomato = document.createElement('div');
+                tomato.className = 'tomato exploded';
+                tomato.textContent = '💥';
+                tomato.style.left = Math.random() * 80 + 10 + '%';
+                tomato.style.bottom = Math.random() * 20 + '%';
+                this.tomatoesContainer.appendChild(tomato);
+                
+                setTimeout(() => {
+                    if (tomato.parentNode) {
+                        tomato.parentNode.removeChild(tomato);
+                    }
+                }, 1000);
+            }
+        }
+
+        // Inicializar o timer quando a página carregar
+        document.addEventListener('DOMContentLoaded', () => {
+            const timer = new PomodoroTimer();
+            
+            // Desabilitar botões de sessão durante execução
+            const originalStart = timer.start.bind(timer);
+            const originalPause = timer.pause.bind(timer);
+            
+            timer.start = function() {
+                timer.sessionBtns.forEach(btn => btn.style.pointerEvents = 'none');
+                timer.sessionBtns.forEach(btn => btn.style.opacity = '0.5');
+                originalStart();
+            };
+            
+            timer.pause = function() {
+                timer.sessionBtns.forEach(btn => btn.style.pointerEvents = 'auto');
+                timer.sessionBtns.forEach(btn => btn.style.opacity = '1');
+                originalPause();
+            };
+        });
+    </script>
+</body>
+</html>

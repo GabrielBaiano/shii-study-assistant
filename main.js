@@ -48,6 +48,7 @@ let CONTENT_Y;
 // Static sources list (edit here to add fixed entries first)
 const staticSources = [
   { label: 'Gemini', source: 'file://' + path.join(__dirname, 'src', 'pages', 'gemini', 'index.html') },
+  { label: 'Pomodoro', source: 'file://' + path.join(__dirname, 'src', 'pages', 'pomodoro', 'index.html') },
 ];
 const placeholderPage = 'file://' + path.join(__dirname, 'src', 'pages', 'placeholder', 'index.html');
 

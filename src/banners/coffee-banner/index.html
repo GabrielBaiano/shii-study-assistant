@@ -54,30 +54,58 @@
             box-sizing: border-box;
         }
 
+        .icon-container {
+            position: relative;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .phase1-icon {
+            position: absolute;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .phase2-icon {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
         .text {
             display: inline-block;
             opacity: 1;
-            animation: textRotate 4s infinite;
+            animation: textRotate 6s infinite; /* Aumentei para 6s */
         }
 
         .coffee-icon {
             width: 16px;
             height: 16px;
-            fill: white;
             filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
-            animation: steam 3s infinite;
+            animation: steam 4s infinite; /* Aumentei para 4s */
+        }
+
+        .heart-icon {
+            width: 14px;
+            height: 14px;
+            fill: #ff6b6b;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+            animation: heartbeat 2s infinite;
         }
 
         @keyframes textRotate {
-            0%, 45% {
+            0%, 40% { /* Aumentei a duração da primeira fase */
                 opacity: 1;
                 transform: translateY(0);
             }
-            50%, 95% {
+            45%, 55% { /* Reduzi a duração da transição */
                 opacity: 0;
                 transform: translateY(-2px);
             }
-            100% {
+            60%, 100% { /* Aumentei a duração da segunda fase */
                 opacity: 1;
                 transform: translateY(0);
             }
@@ -88,6 +116,13 @@
             25% { transform: scale(1.1) rotate(2deg); }
             50% { transform: scale(1) rotate(-2deg); }
             75% { transform: scale(1.05) rotate(1deg); }
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1); }
+            50% { transform: scale(1); }
+            75% { transform: scale(1.05); }
         }
 
         /* Classes para alternar entre os textos */
@@ -135,26 +170,36 @@
 </head>
 <body onclick="openCoffeePage()">
     <div class="banner-container">
-        <svg class="coffee-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 21h20v2H2zM20 19H4V8h3V6a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2h3zm-6-11V6a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2zM6 10v7h12v-7z"/>
-            <path d="M8 12h8v2H8z"/>
-        </svg>
+        <div class="icon-container">
+            <svg class="heart-icon phase1-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <img class="coffee-icon phase2-icon" src="../../assets/icons/buy-me-a-coffe-icon.png" alt="Buy me a coffee" />
+        </div>
         <span class="text phase1"></span>
     </div>
 
     <script>
         let isPhase1 = true;
         const textElement = document.querySelector('.text');
+        const heartIcon = document.querySelector('.heart-icon');
+        const coffeeIcon = document.querySelector('.coffee-icon');
 
-        // Alternar entre as duas frases a cada 2 segundos
+        // Alternar entre as duas frases a cada 3 segundos (sincronizado com a animação)
         setInterval(() => {
             if (isPhase1) {
+                // Mudar para fase 2: Buy me a coffee
                 textElement.className = 'text phase2';
+                heartIcon.style.opacity = '0';
+                coffeeIcon.style.opacity = '1';
             } else {
+                // Mudar para fase 1: You like my app?
                 textElement.className = 'text phase1';
+                heartIcon.style.opacity = '1';
+                coffeeIcon.style.opacity = '0';
             }
             isPhase1 = !isPhase1;
-        }, 2000);
+        }, 3000);
 
         function openCoffeePage() {
             // Abrir página do Buy Me a Coffee no navegador padrão
