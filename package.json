@@ -7,7 +7,13 @@
   "scripts": {
     "start": "electron .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "build:linux": "electron-builder --linux",
+    "dist": "npm run build",
+    "pack": "electron-builder --dir"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +21,7 @@
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
     "electron": "^38.1.2",
+    "electron-builder": "^26.0.12",
     "jsdom": "^25.0.0",
     "node-addon-api": "^8.5.0",
     "node-gyp": "^11.4.2",
@@ -42,7 +49,8 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "build/icon.ico"
+      "icon": "build/icon-256.png",
+      "sign": false
     },
     "mac": {
       "target": "dmg",
