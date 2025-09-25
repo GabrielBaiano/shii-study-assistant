@@ -50,7 +50,7 @@
     "win": {
       "target": "nsis",
       "icon": "build/icon-256.png",
-      "sign": false
+      "forceCodeSigning": false
     },
     "mac": {
       "target": "dmg",

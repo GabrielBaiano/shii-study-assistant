@@ -6,14 +6,35 @@ const path = require('path');
 
 // Helper function to get correct path for both dev and build
 function getAppPath(relativePath) {
-  // In development, __dirname points to the project root
+  // In development, __dirname points to src/banners/ directory
   // In build, __dirname points to the app.asar directory
   if (app && app.isPackaged) {
     // In packaged app, resources are in app.asar.unpacked or in the same directory
-    return path.join(process.resourcesPath, 'app', relativePath);
+    // Try multiple possible locations for the app resources
+    const possiblePaths = [
+      path.join(process.resourcesPath, 'app', relativePath),
+      path.join(process.resourcesPath, relativePath),
+      path.join(process.resourcesPath, 'app.asar.unpacked', relativePath)
+    ];
+    
+    // Return the first path that exists, or the first one if none exist
+    for (const possiblePath of possiblePaths) {
+      try {
+        if (fs.existsSync(possiblePath)) {
+          console.log(`✅ Found banner resource at: ${possiblePath}`);
+          return possiblePath;
+        }
+      } catch (e) {
+        // Continue to next path
+      }
+    }
+    
+    console.log(`⚠️ Banner resource not found, using fallback path: ${possiblePaths[0]}`);
+    return possiblePaths[0];
   } else {
-    // In development, use __dirname
-    return path.join(__dirname, relativePath);
+    // In development, go up from src/banners/ to project root, then add relativePath
+    const projectRoot = path.join(__dirname, '..', '..');
+    return path.join(projectRoot, relativePath);
   }
 }
 
@@ -21,7 +42,7 @@ const defaultBanners = [
     {
         id: 'gabriel-banner',
         name: 'Made by GabrielBaiano',
-        path: 'file://' + getAppPath(path.join('src', 'banners', 'gabriel-banner', 'index.html')),
+        path: getAppPath(path.join('src', 'banners', 'gabriel-banner', 'index.html')),
         enabled: true,
         height: 20, // altura em pixels
         position: 'between_views', // 'between_views', 'top', 'bottom'
@@ -36,7 +57,7 @@ const defaultBanners = [
     {
         id: 'coffee-banner',
         name: 'Buy me a coffee',
-        path: 'file://' + getAppPath(path.join('src', 'banners', 'coffee-banner', 'index.html')),
+        path: getAppPath(path.join('src', 'banners', 'coffee-banner', 'index.html')),
         enabled: true,
         height: 20,
         position: 'between_views',

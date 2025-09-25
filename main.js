@@ -9,7 +9,28 @@ function getAppPath(relativePath) {
   // In build, __dirname points to the app.asar directory
   if (app.isPackaged) {
     // In packaged app, resources are in app.asar.unpacked or in the same directory
-    return path.join(process.resourcesPath, 'app', relativePath);
+    // Try multiple possible locations for the app resources
+    const possiblePaths = [
+      path.join(process.resourcesPath, 'app', relativePath),
+      path.join(process.resourcesPath, relativePath),
+      path.join(__dirname, relativePath),
+      path.join(process.resourcesPath, 'app.asar.unpacked', relativePath)
+    ];
+    
+    // Return the first path that exists, or the first one if none exist
+    for (const possiblePath of possiblePaths) {
+      try {
+        if (fs.existsSync(possiblePath)) {
+          console.log(`✅ Found resource at: ${possiblePath}`);
+          return possiblePath;
+        }
+      } catch (e) {
+        // Continue to next path
+      }
+    }
+    
+    console.log(`⚠️ Resource not found, using fallback path: ${possiblePaths[0]}`);
+    return possiblePaths[0];
   } else {
     // In development, use __dirname
     return path.join(__dirname, relativePath);
@@ -218,12 +239,36 @@ function createWindow() {
 // Load content intelligently
 function loadContent(view, entry) {
   const src = typeof entry === 'string' ? entry : entry.source;
-  if (src.startsWith("http://") || src.startsWith("https://")) {
-    view.webContents.loadURL(src);
-  } else if (src.startsWith("file://")) {
-    view.webContents.loadFile(src.replace("file://", ""));
-  } else {
-    view.webContents.loadFile(src);
+  console.log(`📄 Loading content for: ${entry.label || 'Unknown'}`);
+  console.log(`📄 Source: ${src}`);
+  
+  try {
+    if (src.startsWith("http://") || src.startsWith("https://")) {
+      console.log(`🌐 Loading URL: ${src}`);
+      view.webContents.loadURL(src);
+    } else if (src.startsWith("file://")) {
+      const filePath = src.replace("file://", "");
+      console.log(`📁 Loading file: ${filePath}`);
+      console.log(`📁 File exists: ${fs.existsSync(filePath)}`);
+      view.webContents.loadFile(filePath);
+    } else {
+      console.log(`📁 Loading file (no protocol): ${src}`);
+      console.log(`📁 File exists: ${fs.existsSync(src)}`);
+      view.webContents.loadFile(src);
+    }
+    
+    // Add error handling
+    view.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+      console.error(`❌ Failed to load: ${validatedURL}`);
+      console.error(`❌ Error: ${errorDescription} (${errorCode})`);
+    });
+    
+    view.webContents.on('did-finish-load', () => {
+      console.log(`✅ Successfully loaded: ${entry.label || 'Unknown'}`);
+    });
+    
+  } catch (error) {
+    console.error(`❌ Error loading content: ${error.message}`);
   }
 }
 
@@ -273,10 +318,16 @@ function createBannerViews(sources) {
       });
 
       // Carregar conteúdo do banner
-      if (banner.path.startsWith("file://")) {
-        bannerView.webContents.loadFile(banner.path.replace("file://", ""));
-      } else {
+      console.log(`🎯 Loading banner: ${banner.name}`);
+      console.log(`🎯 Banner path: ${banner.path}`);
+      
+      if (banner.path.startsWith("http://") || banner.path.startsWith("https://")) {
+        console.log(`🌐 Loading banner URL: ${banner.path}`);
         bannerView.webContents.loadURL(banner.path);
+      } else {
+        console.log(`📁 Loading banner file: ${banner.path}`);
+        console.log(`📁 Banner file exists: ${fs.existsSync(banner.path)}`);
+        bannerView.webContents.loadFile(banner.path);
       }
 
       bannerIndex++;
