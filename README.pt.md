@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/icon.png" alt="Logo do Shii! App" width="200"/>
+  <img src="/build/icon-256.png" alt="Logo do Shii! App" width="200"/>
 </p>
 
 <h1 align="center">Shii!</h1>
