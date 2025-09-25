@@ -7,6 +7,8 @@
 <p align="center">
   <a href="/README.md" target="_blank">English</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="https://github.com/GabrielBaiano/stelthapp_test" target="_blank">📚 Versão Original</a>
+  &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="https://github.com/GabrielBaiano/shii-study-assistant/issues/new?title=Sugestão%20ou%20Bug%20no%20Shii!&body=**Descreva%20sua%20ideia%20ou%20o%20problema%20aqui:**%0A%0A%0A**Passos%20para%20reproduzir%20(se%20for%20um%20bug):**%0A1.%20...%0A2.%20...%0A%0A**Qualquer%20outra%20informação%20relevante?**%0A" target="_blank">Reportar Bug / Sugestão</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="https://www.linkedin.com/in/gabriel-nascimento-gama-5b0b30185/" target="_blank">LinkedIn</a>
@@ -19,6 +21,8 @@
 </p>
 
 **Shii!** é um cliente de desktop minimalista e seguro para a API do Google Gemini, projetado com foco em privacidade e produtividade para estudantes. Converse com a IA diretamente do seu computador com a funcionalidade única de proteção de tela, que torna a janela invisível para softwares de gravação e compartilhamento de tela.
+
+> 📚 **Evolução do Projeto**: Esta é a versão aprimorada do [StelthApp](https://github.com/GabrielBaiano/stelthapp_test) com recursos melhorados, documentação aprimorada e design focado em estudantes. Confira a versão original para comparação!
 
 ## 🎓 Funcionalidades Principais
 
