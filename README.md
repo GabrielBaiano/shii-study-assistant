@@ -12,25 +12,25 @@
 <p align="center">
   <a href="/README.pt.md" target="_blank">🇧🇷 Português</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/GabrielBaiano/shii/releases" target="_blank">📦 Downloads</a>
+  <a href="https://github.com/GabrielBaiano/shii-study-assistant/releases" target="_blank">📦 Downloads</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/GabrielBaiano/shii/issues/new?title=Suggestion%20or%20Bug%20in%20Shii!&body=**Describe%20your%20idea%20or%20problem%20here:**%0A%0A%0A**Steps%20to%20reproduce%20(if%20it's%20a%20bug):**%0A1.%20...%0A2.%20...%0A%0A**Any%20other%20relevant%20information?**%0A" target="_blank">🐛 Report Bug</a>
+  <a href="https://github.com/GabrielBaiano/shii-study-assistant/issues/new?title=Suggestion%20or%20Bug%20in%20Shii!&body=**Describe%20your%20idea%20or%20problem%20here:**%0A%0A%0A**Steps%20to%20reproduce%20(if%20it's%20a%20bug):**%0A1.%20...%0A2.%20...%0A%0A**Any%20other%20relevant%20information?**%0A" target="_blank">🐛 Report Bug</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="https://www.linkedin.com/in/gabriel-nascimento-gama-5b0b30185/" target="_blank">💼 LinkedIn</a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/GabrielBaiano/shii/stargazers">
-    <img src="https://img.shields.io/github/stars/GabrielBaiano/shii?style=social" alt="GitHub stars">
+  <a href="https://github.com/GabrielBaiano/shii-study-assistant/stargazers">
+    <img src="https://img.shields.io/github/stars/GabrielBaiano/shii-study-assistant?style=social" alt="GitHub stars">
   </a>
-  <a href="https://github.com/GabrielBaiano/shii/issues">
-    <img src="https://img.shields.io/github/issues/GabrielBaiano/shii" alt="GitHub issues">
+  <a href="https://github.com/GabrielBaiano/shii-study-assistant/issues">
+    <img src="https://img.shields.io/github/issues/GabrielBaiano/shii-study-assistant" alt="GitHub issues">
   </a>
-  <a href="https://github.com/GabrielBaiano/shii/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/GabrielBaiano/shii" alt="License">
+  <a href="https://github.com/GabrielBaiano/shii-study-assistant/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/GabrielBaiano/shii-study-assistant" alt="License">
   </a>
-  <a href="https://github.com/GabrielBaiano/shii/releases">
-    <img src="https://img.shields.io/github/v/release/GabrielBaiano/shii" alt="Latest Release">
+  <a href="https://github.com/GabrielBaiano/shii-study-assistant/releases">
+    <img src="https://img.shields.io/github/v/release/GabrielBaiano/shii-study-assistant" alt="Latest Release">
   </a>
 </p>
 
@@ -62,7 +62,7 @@
 
 ### 📥 Installation
 
-1. **Download**: Go to the **[Releases page](https://github.com/GabrielBaiano/shii/releases)** and download the latest version for your OS
+1. **Download**: Go to the **[Releases page](https://github.com/GabrielBaiano/shii-study-assistant/releases)** and download the latest version for your OS
 2. **Install**: Run the installer (Windows users may see a SmartScreen warning - click "More info" → "Run anyway")
 3. **API Key**: Get your free API key from **[Google AI Studio](https://aistudio.google.com/)**
 4. **Launch**: Open Shii! and paste your API key to start chatting with Gemini
@@ -107,10 +107,10 @@ If you want to clone the repository and run the project locally:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/GabrielBaiano/shii.git
+git clone https://github.com/GabrielBaiano/shii-study-assistant.git
 
 # 2. Navigate to the project folder
-cd shii
+cd shii-study-assistant
 
 # 3. Install dependencies
 npm install

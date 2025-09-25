@@ -18,13 +18,13 @@
   "keywords": ["electron", "ai", "privacy", "students", "gemini", "desktop", "stealth", "education", "javascript", "productivity"],
   "author": "GabrielBaiano",
   "license": "ISC",
-  "homepage": "https://github.com/GabrielBaiano/shii#readme",
+  "homepage": "https://github.com/GabrielBaiano/shii-study-assistant#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GabrielBaiano/shii.git"
+    "url": "https://github.com/GabrielBaiano/shii-study-assistant.git"
   },
   "bugs": {
-    "url": "https://github.com/GabrielBaiano/shii/issues"
+    "url": "https://github.com/GabrielBaiano/shii-study-assistant/issues"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",

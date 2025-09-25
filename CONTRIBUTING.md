@@ -43,8 +43,8 @@ Thank you for your interest in contributing to Shii! 🎉
 ### Getting Started
 ```bash
 # Clone the repository
-git clone https://github.com/GabrielBaiano/shii.git
-cd shii
+git clone https://github.com/GabrielBaiano/shii-study-assistant.git
+cd shii-study-assistant
 
 # Install dependencies
 npm install
