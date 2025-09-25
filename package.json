@@ -1,6 +1,6 @@
 {
   "name": "shii",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A minimalist and secure desktop client for Google Gemini API, designed for students with privacy and productivity focus",
   "main": "./main.js",
   "type": "commonjs",
@@ -10,9 +10,14 @@
     "test:watch": "vitest",
     "build": "electron-builder",
     "build:win": "electron-builder --win",
+    "build:win-installer": "electron-builder --win nsis",
+    "build:win-portable": "electron-builder --win portable",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "dist": "npm run build",
+    "dist:win": "npm run build:win",
+    "dist:installer": "npm run build:win-installer",
+    "dist:portable": "npm run build:win-portable",
     "pack": "electron-builder --dir"
   },
   "keywords": ["electron", "ai", "privacy", "students", "gemini", "desktop", "stealth", "education", "javascript", "productivity"],
@@ -56,9 +61,38 @@
       "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "build/icon-256.png",
-      "forceCodeSigning": false
+      "forceCodeSigning": false,
+      "signAndEditExecutable": false,
+      "signExts": "",
+      "artifactName": "Shii!-${version}-${arch}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Shii!",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "artifactName": "Shii!-Setup-${version}.exe"
+    },
+    "portable": {
+      "artifactName": "Shii!-Portable-${version}.exe"
     },
     "mac": {
       "target": "dmg",

@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2024-09-25
+
+### Added
+- **Windows Auto-Start**: New option to start Shii! automatically with Windows
+- Auto-start configuration in Settings page with clear instructions
+- Tray menu integration for auto-start toggle
+- Automatic synchronization between app settings and Windows registry
+- Enhanced user experience for seamless startup
+
+### Improved
+- Settings UI with better labeling and descriptions
+- Auto-start functionality with proper Windows integration
+- User guidance for enabling auto-start feature
+- Registry management for reliable auto-start behavior
+
+### Technical Details
+- Implemented `app.setLoginItemSettings()` for Windows auto-start
+- Added registry synchronization on app startup
+- Enhanced IPC handlers for real-time settings updates
+- Improved error handling for auto-start operations
+
 ## [1.0.0] - 2024-09-25
 
 ### Added

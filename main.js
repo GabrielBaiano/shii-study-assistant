@@ -514,7 +514,7 @@ function updateTrayMenu() {
           click: () => toggleAlwaysOnTop(),
         },
         {
-          label: `Auto Start ${checkbox(appSettings.autoStart)}`,
+          label: `Start with Windows ${checkbox(appSettings.autoStart)}`,
           click: () => toggleAutoStart(),
         },
         { type: 'separator' },
@@ -595,6 +595,11 @@ function registerSettingsIpc() {
       }
     }
 
+    // Handle auto-start changes
+    if (previous.autoStart !== appSettings.autoStart) {
+      setAutoStart(appSettings.autoStart);
+    }
+
     // Re-register global shortcuts if changed
     if (JSON.stringify(previous.shortcuts) !== JSON.stringify(appSettings.shortcuts)) {
       registerGlobalShortcuts();
@@ -651,8 +656,40 @@ function toggleAlwaysOnTop() {
 // Toggle auto start
 function toggleAutoStart() {
   appSettings.autoStart = !appSettings.autoStart;
+  setAutoStart(appSettings.autoStart);
   updateTrayMenu();
   saveSettingsToDisk(appSettings);
+}
+
+// Set auto start with Windows
+function setAutoStart(enabled) {
+  try {
+    const options = {
+      openAtLogin: enabled,
+      openAsHidden: false,
+      name: 'Shii!',
+      path: process.execPath,
+      args: []
+    };
+    
+    app.setLoginItemSettings(options);
+    console.log(`✅ Auto-start ${enabled ? 'ativado' : 'desativado'} com sucesso`);
+    return true;
+  } catch (error) {
+    console.error('❌ Erro ao configurar auto-start:', error.message);
+    return false;
+  }
+}
+
+// Check if auto-start is enabled
+function isAutoStartEnabled() {
+  try {
+    const loginItemSettings = app.getLoginItemSettings();
+    return loginItemSettings.openAtLogin;
+  } catch (error) {
+    console.error('❌ Erro ao verificar auto-start:', error.message);
+    return false;
+  }
 }
 
 // Set scroll speed
@@ -715,6 +752,15 @@ app.whenReady().then(() => {
   // Load settings from disk before creating windows
   const diskSettings = loadSettingsFromDisk();
   console.log('Loaded settings from disk:', diskSettings);
+  
+  // Sync auto-start setting with Windows registry
+  if (diskSettings.autoStart !== undefined) {
+    const actualAutoStart = isAutoStartEnabled();
+    if (diskSettings.autoStart !== actualAutoStart) {
+      console.log(`🔄 Sincronizando auto-start: config=${diskSettings.autoStart}, sistema=${actualAutoStart}`);
+      setAutoStart(diskSettings.autoStart);
+    }
+  }
   
   // Ensure all required shortcuts exist
   if (!diskSettings.shortcuts) diskSettings.shortcuts = {};

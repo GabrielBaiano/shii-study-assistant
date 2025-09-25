@@ -149,3 +149,16 @@ release/
 *.snap
 *.msi
 *.nsis
+*.zip
+*.7z
+*.tar.gz
+*.rar
+
+# Release packages
+Shii-Portable-*.zip
+*.portable.zip
+create-release.bat
+
+# Temporary files
+*.tmp
+*.temp
