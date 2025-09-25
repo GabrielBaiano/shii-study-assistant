@@ -1,7 +1,7 @@
 {
-  "name": "stealth_app",
+  "name": "shii",
   "version": "1.0.0",
-  "description": "",
+  "description": "A minimalist and secure desktop client for Google Gemini API, designed for students with privacy and productivity focus",
   "main": "./main.js",
   "type": "commonjs",
   "scripts": {
@@ -15,9 +15,17 @@
     "dist": "npm run build",
     "pack": "electron-builder --dir"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["electron", "ai", "privacy", "students", "gemini", "desktop", "stealth", "education", "javascript", "productivity"],
+  "author": "GabrielBaiano",
   "license": "ISC",
+  "homepage": "https://github.com/GabrielBaiano/shii#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GabrielBaiano/shii.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GabrielBaiano/shii/issues"
+  },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
     "electron": "^38.1.2",
@@ -29,7 +37,7 @@
   },
   "build": {
     "appId": "com.gabrielbaiano.stealthapp",
-    "productName": "Stealth App",
+    "productName": "Shii!",
     "directories": {
       "output": "dist"
     },

@@ -5,11 +5,33 @@
 <h1 align="center">Shii!</h1>
 
 <p align="center">
-  <a href="/README.pt.md" target="_blank">Português</a>
+  <strong>A minimalist and secure desktop client for Google Gemini API</strong><br>
+  <em>Designed for students with privacy and productivity focus</em>
+</p>
+
+<p align="center">
+  <a href="/README.pt.md" target="_blank">🇧🇷 Português</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="https://github.com/GabrielBaiano/shii/issues/new?title=Suggestion%20or%20Bug%20in%20Shii!&body=**Describe%20your%20idea%20or%20problem%20here:**%0A%0A%0A**Steps%20to%20reproduce%20(if%20it's%20a%20bug):**%0A1.%20...%0A2.%20...%0A%0A**Any%20other%20relevant%20information?**%0A" target="_blank">Report Bug / Suggestion</a>
+  <a href="https://github.com/GabrielBaiano/shii/releases" target="_blank">📦 Downloads</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="https://www.linkedin.com/in/gabriel-nascimento-gama-5b0b30185/" target="_blank">LinkedIn</a>
+  <a href="https://github.com/GabrielBaiano/shii/issues/new?title=Suggestion%20or%20Bug%20in%20Shii!&body=**Describe%20your%20idea%20or%20problem%20here:**%0A%0A%0A**Steps%20to%20reproduce%20(if%20it's%20a%20bug):**%0A1.%20...%0A2.%20...%0A%0A**Any%20other%20relevant%20information?**%0A" target="_blank">🐛 Report Bug</a>
+  &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="https://www.linkedin.com/in/gabriel-nascimento-gama-5b0b30185/" target="_blank">💼 LinkedIn</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/GabrielBaiano/shii/stargazers">
+    <img src="https://img.shields.io/github/stars/GabrielBaiano/shii?style=social" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/GabrielBaiano/shii/issues">
+    <img src="https://img.shields.io/github/issues/GabrielBaiano/shii" alt="GitHub issues">
+  </a>
+  <a href="https://github.com/GabrielBaiano/shii/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/GabrielBaiano/shii" alt="License">
+  </a>
+  <a href="https://github.com/GabrielBaiano/shii/releases">
+    <img src="https://img.shields.io/github/v/release/GabrielBaiano/shii" alt="Latest Release">
+  </a>
 </p>
 
 ---
@@ -36,15 +58,21 @@
 * **Packaging**: electron-builder
 * **Libraries**: `marked.js` (Markdown), `highlight.js` (Code Highlighting)
 
-## 📖 How to Use and Install
+## 🚀 Quick Start
 
-Installation is simple and straightforward.
+### 📥 Installation
 
-1. Go to the **[Releases page here](https://github.com/GabrielBaiano/shii/tags)**.
-2. Download the latest installer for your operating system (e.g., `Shii-Setup-X.X.X.exe` for Windows).
-3. Run the installer.
-   * **Note for Windows:** SmartScreen may display a warning about "Unknown Publisher". This is normal. Click "More info" and then "Run anyway".
-4. Get your API key from **[Google AI Studio](https://aistudio.google.com/)**.
+1. **Download**: Go to the **[Releases page](https://github.com/GabrielBaiano/shii/releases)** and download the latest version for your OS
+2. **Install**: Run the installer (Windows users may see a SmartScreen warning - click "More info" → "Run anyway")
+3. **API Key**: Get your free API key from **[Google AI Studio](https://aistudio.google.com/)**
+4. **Launch**: Open Shii! and paste your API key to start chatting with Gemini
+
+### ⚡ First Steps
+
+- **Chat**: Start typing to chat with Google Gemini AI
+- **Stealth Mode**: Toggle stealth mode to hide from screen recording
+- **Add Sites**: Go to Settings → Add your favorite study websites
+- **Shortcuts**: Use `Ctrl+Alt+↑/↓` to scroll, `Ctrl+Alt+L` to toggle stealth
 
 ## 🌐 Adding Your Own Websites
 
