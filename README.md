@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/build/icon-256.png" alt="Shii! App Logo" width="200"/>
+  <img src="https://github.com/GabrielBaiano/shii-study-assistant/blob/main/build/icon-256.png?raw=true" alt="Shii! App Logo" width="200"/>
 </p>
 
 <h1 align="center">Shii!</h1>
