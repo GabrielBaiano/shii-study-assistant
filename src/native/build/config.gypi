@@ -405,15 +405,15 @@
     "python": "C:\\Python313\\python.exe",
     "standalone_static_library": 1,
     "msbuild_path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\BuildTools\\MSBuild\\Current\\Bin\\MSBuild.exe",
-    "user_agent": "npm/9.5.1 node/v18.16.1 win32 x64 workspaces/false",
-    "userconfig": "C:\\Users\\gabri\\.npmrc",
-    "prefix": "C:\\Users\\gabri\\AppData\\Roaming\\npm",
-    "node_gyp": "C:\\Program Files\\nodejs\\node_modules\\npm\\node_modules\\node-gyp\\bin\\node-gyp.js",
-    "metrics_registry": "https://registry.npmjs.org/",
-    "local_prefix": "C:\\Users\\gabri\\OneDrive\\Documentos\\GitHub\\Stealth_APP\\src\\native",
-    "init_module": "C:\\Users\\gabri\\.npm-init.js",
-    "global_prefix": "C:\\Users\\gabri\\AppData\\Roaming\\npm",
+    "cache": "C:\\Users\\gabri\\AppData\\Local\\npm-cache",
     "globalconfig": "C:\\Users\\gabri\\AppData\\Roaming\\npm\\etc\\npmrc",
-    "cache": "C:\\Users\\gabri\\AppData\\Local\\npm-cache"
+    "global_prefix": "C:\\Users\\gabri\\AppData\\Roaming\\npm",
+    "init_module": "C:\\Users\\gabri\\.npm-init.js",
+    "local_prefix": "C:\\Users\\gabri\\OneDrive\\Documentos\\GitHub\\Stealth_APP\\src\\native",
+    "metrics_registry": "https://registry.npmjs.org/",
+    "node_gyp": "C:\\Program Files\\nodejs\\node_modules\\npm\\node_modules\\node-gyp\\bin\\node-gyp.js",
+    "prefix": "C:\\Users\\gabri\\AppData\\Roaming\\npm",
+    "userconfig": "C:\\Users\\gabri\\.npmrc",
+    "user_agent": "npm/9.5.1 node/v18.16.1 win32 x64 workspaces/false"
   }
 }

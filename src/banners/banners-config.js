@@ -3,38 +3,57 @@
 
 const { app } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 // Helper function to get correct path for both dev and build
 function getAppPath(relativePath) {
-  // In development, __dirname points to src/banners/ directory
-  // In build, __dirname points to the app.asar directory
+  console.log(`🔍 Getting banner path for: ${relativePath}`);
+  console.log(`📁 App is packaged: ${app ? app.isPackaged : 'unknown'}`);
+  console.log(`📁 Resources path: ${process.resourcesPath}`);
+  console.log(`📁 Current dirname: ${__dirname}`);
+  
   if (app && app.isPackaged) {
-    // In packaged app, resources are in app.asar.unpacked or in the same directory
-    // Try multiple possible locations for the app resources
+    // In packaged app, try multiple possible locations
     const possiblePaths = [
-      path.join(process.resourcesPath, 'app', relativePath),
+      // Try in extraResources (most reliable for ZIP)
       path.join(process.resourcesPath, relativePath),
-      path.join(process.resourcesPath, 'app.asar.unpacked', relativePath)
+      // Try in app.asar.unpacked
+      path.join(process.resourcesPath, 'app.asar.unpacked', relativePath),
+      // Try in app subdirectory
+      path.join(process.resourcesPath, 'app', relativePath),
+      // Try relative to current directory
+      path.join(__dirname, relativePath),
+      // Try with src prefix
+      path.join(process.resourcesPath, 'src', relativePath.replace('src/', ''))
     ];
     
-    // Return the first path that exists, or the first one if none exist
-    for (const possiblePath of possiblePaths) {
+    console.log(`🔍 Checking ${possiblePaths.length} possible paths...`);
+    
+    // Return the first path that exists
+    for (let i = 0; i < possiblePaths.length; i++) {
+      const possiblePath = possiblePaths[i];
       try {
+        console.log(`🔍 [${i+1}/${possiblePaths.length}] Checking: ${possiblePath}`);
         if (fs.existsSync(possiblePath)) {
           console.log(`✅ Found banner resource at: ${possiblePath}`);
           return possiblePath;
+        } else {
+          console.log(`❌ Not found: ${possiblePath}`);
         }
       } catch (e) {
-        // Continue to next path
+        console.log(`❌ Error checking path ${possiblePath}:`, e.message);
       }
     }
     
-    console.log(`⚠️ Banner resource not found, using fallback path: ${possiblePaths[0]}`);
+    // If nothing found, return the first path as fallback
+    console.log(`⚠️ No banner path found, using fallback: ${possiblePaths[0]}`);
     return possiblePaths[0];
   } else {
-    // In development, go up from src/banners/ to project root, then add relativePath
+    // In development, go up from src/banners/ to project root
     const projectRoot = path.join(__dirname, '..', '..');
-    return path.join(projectRoot, relativePath);
+    const devPath = path.join(projectRoot, relativePath);
+    console.log(`🔧 Development path: ${devPath}`);
+    return devPath;
   }
 }
 
@@ -44,7 +63,7 @@ const defaultBanners = [
         name: 'Made by GabrielBaiano',
         path: getAppPath(path.join('src', 'banners', 'gabriel-banner', 'index.html')),
         enabled: true,
-        height: 20, // altura em pixels
+        height: 15, // altura em pixels
         position: 'between_views', // 'between_views', 'top', 'bottom'
         frequency: 2, // aparece a cada X views (0 = desabilitado, 1 = entre todas as views)
         customCSS: '', // CSS personalizado opcional
@@ -59,7 +78,7 @@ const defaultBanners = [
         name: 'Buy me a coffee',
         path: getAppPath(path.join('src', 'banners', 'coffee-banner', 'index.html')),
         enabled: true,
-        height: 20,
+        height: 15,
         position: 'between_views',
         frequency: 3, // aparece a cada 3 views
         customCSS: '',
@@ -74,7 +93,7 @@ const defaultBanners = [
 // Configurações globais dos banners
 const bannerSettings = {
     globalEnabled: true, // habilita/desabilita todos os banners
-    defaultHeight: 20,
+    defaultHeight: 15,
     animationDuration: 300, // duração da animação em ms
     spacing: 0, // espaço extra entre banners e views
     respectScrolling: true, // se os banners devem seguir o scroll

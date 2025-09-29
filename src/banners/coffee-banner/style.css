@@ -5,7 +5,7 @@
 }
 
 body {
-    height: 30px;
+    height: 15px;
     background: linear-gradient(45deg, #ff6b6b 0%, #ffa500 100%);
     display: flex;
     align-items: center;

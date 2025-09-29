@@ -8,19 +8,29 @@
     "start": "electron .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:win-installer": "electron-builder --win nsis",
-    "build:win-portable": "electron-builder --win portable",
+    "build": "electron-builder --win dir && npm run create-zip",
+    "build:win": "electron-builder --win dir && npm run create-zip",
+    "build:win-zip": "electron-builder --win dir && npm run create-zip",
     "build:mac": "electron-builder --mac",
     "build:linux": "electron-builder --linux",
     "dist": "npm run build",
     "dist:win": "npm run build:win",
-    "dist:installer": "npm run build:win-installer",
-    "dist:portable": "npm run build:win-portable",
+    "dist:zip": "npm run build:win-zip",
+    "create-zip": "powershell -Command \"Compress-Archive -Path 'dist/win-unpacked/*' -DestinationPath 'dist/Shii!-Portable-1.0.1.zip' -Force\"",
     "pack": "electron-builder --dir"
   },
-  "keywords": ["electron", "ai", "privacy", "students", "gemini", "desktop", "stealth", "education", "javascript", "productivity"],
+  "keywords": [
+    "electron",
+    "ai",
+    "privacy",
+    "students",
+    "gemini",
+    "desktop",
+    "stealth",
+    "education",
+    "javascript",
+    "productivity"
+  ],
   "author": "GabrielBaiano",
   "license": "ISC",
   "homepage": "https://github.com/GabrielBaiano/shii-study-assistant#readme",
@@ -38,7 +48,7 @@
     "jsdom": "^25.0.0",
     "node-addon-api": "^8.5.0",
     "node-gyp": "^11.4.2",
-    "vitest": "^2.1.1"
+    "vitest": "^3.2.4"
   },
   "build": {
     "appId": "com.gabrielbaiano.stealthapp",
@@ -60,23 +70,29 @@
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
       "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
     ],
+    "extraResources": [
+      {
+        "from": "src/banners",
+        "to": "src/banners",
+        "filter": ["**/*"]
+      }
+    ],
     "win": {
       "target": [
         {
-          "target": "nsis",
-          "arch": ["x64"]
-        },
-        {
-          "target": "portable",
-          "arch": ["x64"]
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon-256.png",
       "forceCodeSigning": false,
       "signAndEditExecutable": false,
       "signExts": "",
-      "artifactName": "Shii!-${version}-${arch}.${ext}",
-      "requestedExecutionLevel": "asInvoker"
+      "artifactName": "Shii!-${version}-${arch}",
+      "requestedExecutionLevel": "asInvoker",
+      "verifyUpdateCodeSignature": false
     },
     "nsis": {
       "oneClick": false,

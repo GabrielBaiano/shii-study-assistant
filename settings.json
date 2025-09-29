@@ -1,4 +1,24 @@
 {
   "scrollSpeed": 200,
-  "alwaysOnTop": false
+  "alwaysOnTop": false,
+  "shortcuts": {
+    "scrollUp": "CommandOrControl+Alt+Up",
+    "scrollDown": "CommandOrControl+Alt+Down",
+    "pageLeft": "CommandOrControl+Alt+Left",
+    "pageRight": "CommandOrControl+Alt+Right",
+    "lock": "CommandOrControl+Alt+L",
+    "minimize": "CommandOrControl+Alt+M"
+  },
+  "banners": {
+    "enabled": true,
+    "enabledBanners": ["gabriel-banner", "coffee-banner"],
+    "height": 30,
+    "containerHeight": 30,
+    "theme": "default"
+  },
+  "stealth": {
+    "enabled": true,
+    "autoStart": true,
+    "showInTray": true
+  }
 }

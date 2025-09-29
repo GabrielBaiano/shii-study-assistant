@@ -1,302 +1,209 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Settings</title>
-    <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 16px; color: #111; }
-      h1 { font-size: 18px; margin: 0 0 12px; }
-      .section { border: 1px solid #e5e7eb; border-radius: 0px; padding: 12px; margin-bottom: 12px; }
-      .row { display: flex; align-items: center; justify-content: space-between; margin: 8px 0; }
-      label { font-weight: 600; }
-      .hint { color: #6b7280; font-size: 12px; }
-      select, input[type="checkbox"] { font-size: 14px; }
-      .footer { display: flex; justify-content: flex-end; margin-top: 12px; }
-      button { background: #111827; color: white; border: 0; border-radius: 0px; padding: 8px 12px; cursor: pointer; }
-      button:disabled { background: #9ca3af; cursor: default; }
-    </style>
-  </head>
-  <body>
-    <h1>Settings</h1>
-
-    <div class="section">
-      <div class="row">
-        <label for="alwaysOnTop">Always on top</label>
-        <input id="alwaysOnTop" type="checkbox" />
-      </div>
-      <div class="row">
-        <label for="autoStart">Start with Windows</label>
-        <input id="autoStart" type="checkbox" />
-      </div>
-      <div class="hint">Shii! will automatically start when Windows boots up</div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações - Shii!</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="settings-container">
+    <!-- Header -->
+    <div class="settings-header">
+      <div class="settings-icon">⚙️</div>
+      <div class="settings-title">Configurações</div>
     </div>
 
-    <div class="section">
-      <h3 style="margin: 0 0 12px; font-size: 14px; color: #374151;">🕵️ Stealth Mode</h3>
-      <div class="row">
-        <label for="stealthEnabled">Enable Stealth Mode</label>
-        <input id="stealthEnabled" type="checkbox" />
-      </div>
-      <div class="row">
-        <label for="stealthAutoStart">Auto-start Stealth</label>
-        <input id="stealthAutoStart" type="checkbox" />
-      </div>
-      <div class="hint">Stealth mode hides the window from screen sharing (Teams, Zoom, Discord, OBS, etc.)</div>
-    </div>
-
-    <div class="section">
-      <div class="row">
-        <label for="scrollSpeed">Scroll speed</label>
-        <select id="scrollSpeed">
-          <option value="50">Slow (50px)</option>
-          <option value="100">Normal (100px)</option>
-          <option value="200">Fast (200px)</option>
-        </select>
-      </div>
-      <div class="hint">Changes apply immediately.</div>
-    </div>
-
-    <div class="section">
-      <div class="row">
-        <label for="siteInput">Add site (https://...)</label>
-        <div>
-          <input id="siteInput" placeholder="https://example.com" style="width:220px;" />
-          <button id="addSiteBtn">Add</button>
+    <!-- Content -->
+    <div class="settings-content">
+      <!-- Seção Geral -->
+      <div class="settings-section">
+        <div class="section-title">
+          <div class="section-icon">🔧</div>
+          Geral
         </div>
-      </div>
-      <div class="row" style="flex-direction:column; align-items:stretch;">
-        <label>Sites</label>
-        <ul id="sitesList" style="list-style:none; padding:0; margin:8px 0; max-height:160px; overflow:auto; border:1px solid #e5e7eb; border-radius:0px;"></ul>
-        <div class="hint">Adding/removing sites requires restart.</div>
-      </div>
-    </div>
-      <div class="row">
-        <label>Remap: Scroll Up</label>
-        <div>
-          <span id="labelScrollUp" class="hint" style="margin-right:8px;"></span>
-          <button id="remapScrollUp">Set</button>
-        </div>
-      </div>
-      <div class="row">
-        <label>Remap: Scroll Down</label>
-        <div>
-          <span id="labelScrollDown" class="hint" style="margin-right:8px;"></span>
-          <button id="remapScrollDown">Set</button>
-        </div>
-      </div>
-      <div class="row">
-        <label>Remap: Toggle Lock</label>
-        <div>
-          <span id="labelToggleLock" class="hint" style="margin-right:8px;"></span>
-          <button id="remapToggleLock">Set</button>
-        </div>
-      </div>
-      <div class="row">
-        <label>Remap: Minimize/Restore</label>
-        <div>
-          <span id="labelToggleMinimize" class="hint" style="margin-right:8px;"></span>
-          <button id="remapToggleMinimize">Set</button>
-        </div>
-      </div>
-      <div class="hint">Press the desired key combination when prompted.</div>
-    </div>
-
-    <div class="footer">
-      <button id="restartBtn">Restart app</button>
-      <button id="closeBtn" style="margin-left:8px;">Close</button>
-    </div>
-
-    <script>
-      const checkboxAlwaysOnTop = document.getElementById('alwaysOnTop');
-      const checkboxAutoStart = document.getElementById('autoStart');
-      const selectScroll = document.getElementById('scrollSpeed');
-      const checkboxStealthEnabled = document.getElementById('stealthEnabled');
-      const checkboxStealthAutoStart = document.getElementById('stealthAutoStart');
-      const closeBtn = document.getElementById('closeBtn');
-      const remapScrollUpBtn = document.getElementById('remapScrollUp');
-      const remapScrollDownBtn = document.getElementById('remapScrollDown');
-      const remapToggleLockBtn = document.getElementById('remapToggleLock');
-      const remapToggleMinimizeBtn = document.getElementById('remapToggleMinimize');
-      const labelScrollUp = document.getElementById('labelScrollUp');
-      const labelScrollDown = document.getElementById('labelScrollDown');
-      const labelToggleLock = document.getElementById('labelToggleLock');
-      const labelToggleMinimize = document.getElementById('labelToggleMinimize');
-      const restartBtn = document.getElementById('restartBtn');
-      const siteInput = document.getElementById('siteInput');
-      const addSiteBtn = document.getElementById('addSiteBtn');
-      const sitesList = document.getElementById('sitesList');
-
-      async function loadSettings() {
-        try {
-          const s = await window.settingsAPI.get();
-          checkboxAlwaysOnTop.checked = !!s.alwaysOnTop;
-          checkboxAutoStart.checked = !!s.autoStart;
-          selectScroll.value = String(s.scrollSpeed || 100);
-          checkboxStealthEnabled.checked = !!(s.stealth && s.stealth.enabled);
-          checkboxStealthAutoStart.checked = !!(s.stealth && s.stealth.autoStart);
-          const sh = s.shortcuts || {};
-          labelScrollUp.textContent = sh.scrollUp || "";
-          labelScrollDown.textContent = sh.scrollDown || "";
-          labelToggleLock.textContent = sh.toggleLock || "";
-          labelToggleMinimize.textContent = sh.toggleMinimize || "";
-          renderSites(s.userSites || []);
-        } catch (e) {
-          console.error('Failed to load settings', e);
-        }
-      }
-
-      function debounce(fn, ms) {
-        let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-      }
-
-      const update = debounce((partial) => window.settingsAPI.update(partial), 50);
-
-      checkboxAlwaysOnTop.addEventListener('change', () => update({ alwaysOnTop: checkboxAlwaysOnTop.checked }));
-      checkboxAutoStart.addEventListener('change', () => update({ autoStart: checkboxAutoStart.checked }));
-      selectScroll.addEventListener('change', () => update({ scrollSpeed: Number(selectScroll.value) }));
-      
-      // Stealth controls
-      checkboxStealthEnabled.addEventListener('change', async () => {
-        const enabled = checkboxStealthEnabled.checked;
-        await update({ 
-          stealth: { 
-            enabled: enabled,
-            autoStart: checkboxStealthAutoStart.checked,
-            showInTray: true
-          }
-        });
         
-        // Ativar/desativar stealth imediatamente
-        if (enabled) {
-          await window.stealthAPI.enable();
-        } else {
-          await window.stealthAPI.disable();
-        }
-      });
-      
-      checkboxStealthAutoStart.addEventListener('change', () => update({ 
-        stealth: { 
-          enabled: checkboxStealthEnabled.checked,
-          autoStart: checkboxStealthAutoStart.checked,
-          showInTray: true
-        }
-      }));
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Sempre no topo</div>
+            <div class="setting-description">Mantém a janela sempre visível sobre outras</div>
+          </div>
+          <div class="setting-control">
+            <input type="checkbox" class="toggle" id="alwaysOnTop">
+          </div>
+        </div>
 
-      closeBtn.addEventListener('click', () => window.close());
-      restartBtn.addEventListener('click', () => window.settingsAPI.restart());
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Iniciar com Windows</div>
+            <div class="setting-description">Inicia automaticamente quando o Windows ligar</div>
+          </div>
+          <div class="setting-control">
+            <input type="checkbox" class="toggle" id="autoStart">
+          </div>
+        </div>
 
-      function renderSites(sites) {
-        sitesList.innerHTML = '';
-        sites.forEach((url, idx) => {
-          const li = document.createElement('li');
-          li.style.display = 'flex';
-          li.style.justifyContent = 'space-between';
-          li.style.padding = '6px 8px';
-          const span = document.createElement('span');
-          span.textContent = url;
-          const rm = document.createElement('button');
-          rm.textContent = 'Remove';
-          rm.addEventListener('click', async () => {
-            const s = await window.settingsAPI.get();
-            const next = (s.userSites || []).filter((_, i) => i !== idx);
-            await update({ userSites: next });
-            renderSites(next);
-          });
-          li.appendChild(span);
-          li.appendChild(rm);
-          sitesList.appendChild(li);
-        });
-      }
+      </div>
 
-      addSiteBtn.addEventListener('click', async () => {
-        const url = (siteInput.value || '').trim();
-        if (!/^https?:\/\//i.test(url)) {
-          alert('Enter a valid http(s) URL');
-          return;
-        }
-        const s = await window.settingsAPI.get();
-        const next = Array.from(new Set([...(s.userSites || []), url]));
-        await update({ userSites: next });
-        renderSites(next);
-        siteInput.value = '';
-      });
+      <!-- Seção Stealth -->
+      <div class="settings-section">
+        <div class="section-title">
+          <div class="section-icon">🕵️</div>
+          Modo Stealth
+        </div>
+        
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Ativar modo stealth</div>
+            <div class="setting-description">Oculta a janela de compartilhamento de tela</div>
+          </div>
+          <div class="setting-control">
+            <input type="checkbox" class="toggle" id="stealthEnabled">
+          </div>
+        </div>
 
-      function normalizeCombo(e) {
-        const parts = [];
-        if (e.ctrlKey || e.metaKey) parts.push('CommandOrControl');
-        if (e.altKey) parts.push('Alt');
-        if (e.shiftKey) parts.push('Shift');
-        let key = e.key;
-        if (key === ' ') key = 'Space';
-        if (key.startsWith('Arrow')) key = key.replace('Arrow', '');
-        if (key.length === 1) key = key.toUpperCase();
-        const ignore = ['Control','Alt','Shift','Meta'];
-        if (!ignore.includes(key)) parts.push(key);
-        return parts.join('+');
-      }
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Ativar stealth automaticamente</div>
+            <div class="setting-description">Ativa o modo stealth ao iniciar o app</div>
+          </div>
+          <div class="setting-control">
+            <input type="checkbox" class="toggle" id="stealthAutoStart">
+          </div>
+        </div>
+      </div>
 
-      function captureCombo(label, onDone) {
-        const overlay = document.createElement('div');
-        overlay.style.position = 'fixed';
-        overlay.style.inset = '0';
-        overlay.style.background = 'rgba(0,0,0,0.5)';
-        overlay.style.display = 'flex';
-        overlay.style.alignItems = 'center';
-        overlay.style.justifyContent = 'center';
-        overlay.innerHTML = `<div style="background:#fff;padding:16px;border-radius:0px;min-width:260px;text-align:center;">
-          <div style="font-weight:700;margin-bottom:8px;">Press keys for ${label}</div>
-          <div class="hint">Press Esc to cancel</div>
-        </div>`;
-        document.body.appendChild(overlay);
+      <!-- Seção Navegação -->
+      <div class="settings-section">
+        <div class="section-title">
+          <div class="section-icon">🎯</div>
+          Navegação
+        </div>
+        
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Velocidade de rolagem</div>
+            <div class="setting-description">Velocidade de navegação entre páginas</div>
+          </div>
+          <div class="setting-control">
+            <select class="select" id="scrollSpeed">
+              <option value="50">Lenta (50px)</option>
+              <option value="100">Normal (100px)</option>
+              <option value="200">Rápida (200px)</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
-        function onKeyDown(e) {
-          if (e.key === 'Escape') { cleanup(); return; }
-          const combo = normalizeCombo(e);
-          if (combo) { cleanup(); onDone(combo); }
-        }
-        function cleanup() {
-          window.removeEventListener('keydown', onKeyDown, true);
-          overlay.remove();
-        }
-        window.addEventListener('keydown', onKeyDown, true);
-      }
+      <!-- Seção Sites Personalizados -->
+      <div class="settings-section">
+        <div class="section-title">
+          <div class="section-icon">🌐</div>
+          Sites Personalizados
+        </div>
+        
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Adicionar site</div>
+            <div class="setting-description">Adicione sites para aparecerem no app</div>
+          </div>
+          <div class="setting-control">
+            <div style="display: flex; gap: 8px; width: 100%;">
+              <input 
+                type="text" 
+                class="input" 
+                id="siteInput" 
+                placeholder="https://exemplo.com"
+              >
+              <button class="button" id="addSiteBtn">Adicionar</button>
+            </div>
+          </div>
+        </div>
 
-      remapScrollUpBtn.addEventListener('click', () => {
-        captureCombo('Scroll Up', async (combo) => {
-          await update({ shortcuts: { scrollUp: combo } });
-          labelScrollUp.textContent = combo;
-        });
-      });
-      remapScrollDownBtn.addEventListener('click', () => {
-        captureCombo('Scroll Down', async (combo) => {
-          await update({ shortcuts: { scrollDown: combo } });
-          labelScrollDown.textContent = combo;
-        });
-      });
-      remapToggleLockBtn.addEventListener('click', () => {
-        captureCombo('Toggle Lock', async (combo) => {
-          await update({ shortcuts: { toggleLock: combo } });
-          labelToggleLock.textContent = combo;
-        });
-      });
-      remapToggleMinimizeBtn.addEventListener('click', () => {
-        captureCombo('Minimize/Restore', async (combo) => {
-          await update({ shortcuts: { toggleMinimize: combo } });
-          labelToggleMinimize.textContent = combo;
-        });
-      });
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Sites adicionados</div>
+            <div class="setting-description">Sites que aparecem no app</div>
+          </div>
+          <div class="setting-control">
+            <div class="sites-list" id="sitesList">
+              <div class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <div>Nenhum site adicionado</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      // Expor API de stealth para a página
-      window.stealthAPI = {
-        enable: () => window.electronAPI.invoke('stealth:api:enable'),
-        disable: () => window.electronAPI.invoke('stealth:api:disable')
-      };
+      <!-- Seção Atalhos de Teclado -->
+      <div class="settings-section">
+        <div class="section-title">
+          <div class="section-icon">⌨️</div>
+          Atalhos de Teclado
+        </div>
+        
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Rolar para cima</div>
+            <div class="setting-description">Atalho para rolar para cima</div>
+          </div>
+          <div class="setting-control">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <div class="shortcut-display" id="shortcutScrollUp">CommandOrControl+Alt+Up</div>
+              <button class="button secondary" id="remapScrollUpBtn">Definir</button>
+            </div>
+          </div>
+        </div>
 
-      loadSettings();
-    </script>
-  </body>
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Rolar para baixo</div>
+            <div class="setting-description">Atalho para rolar para baixo</div>
+          </div>
+          <div class="setting-control">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <div class="shortcut-display" id="shortcutScrollDown">CommandOrControl+Alt+Down</div>
+              <button class="button secondary" id="remapScrollDownBtn">Definir</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Alternar fixação</div>
+            <div class="setting-description">Atalho para alternar sempre no topo</div>
+          </div>
+          <div class="setting-control">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <div class="shortcut-display" id="shortcutToggleLock">CommandOrControl+Alt+L</div>
+              <button class="button secondary" id="remapToggleLockBtn">Definir</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Minimizar/Restaurar</div>
+            <div class="setting-description">Atalho para minimizar ou restaurar a janela</div>
+          </div>
+          <div class="setting-control">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <div class="shortcut-display" id="shortcutToggleMinimize">CommandOrControl+Alt+M</div>
+              <button class="button secondary" id="remapToggleMinimizeBtn">Definir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="settings-footer">
+      <button class="button secondary" id="closeBtn">Fechar</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
 </html>
-
-

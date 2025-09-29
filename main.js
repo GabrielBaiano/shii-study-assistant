@@ -1,4 +1,4 @@
-const { app, BrowserWindow, WebContentsView, screen, globalShortcut, ipcMain, Tray, Menu, nativeImage } = require("electron");
+const { app, BrowserWindow, WebContentsView, screen, globalShortcut, ipcMain, Tray, Menu, nativeImage, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { defaultBanners, bannerSettings } = require("./src/banners/banners-config");
@@ -78,8 +78,8 @@ let appSettings = {
   banners: {
     enabled: true,
     enabledBanners: ['gabriel-banner', 'coffee-banner'], // IDs dos banners habilitados
-    height: 30, // altura total do banner (ocupa todo o espaço)
-    containerHeight: 30, // espaço total que o banner pode consumir
+    height: 15, // altura total do banner (ocupa todo o espaço)
+    containerHeight: 15, // espaço total que o banner pode consumir
     theme: 'default'
   },
   stealth: {
@@ -110,6 +110,57 @@ function getSettingsFilePath() {
   } catch {
     return path.join(__dirname, 'settings.json');
   }
+}
+
+// Apply settings changes dynamically without restart
+function applySettingsChanges(previous, current) {
+  console.log('🔄 Aplicando mudanças de configuração dinamicamente...');
+  
+  // Always on top changes
+  if (previous.alwaysOnTop !== current.alwaysOnTop) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setAlwaysOnTop(current.alwaysOnTop);
+      console.log(`✅ Always on top ${current.alwaysOnTop ? 'ativado' : 'desativado'}`);
+    }
+  }
+
+  // Auto-start changes
+  if (previous.autoStart !== current.autoStart) {
+    setAutoStart(current.autoStart);
+    console.log(`✅ Auto-start ${current.autoStart ? 'ativado' : 'desativado'}`);
+  }
+
+  // Banner settings changes
+  if (JSON.stringify(previous.banners) !== JSON.stringify(current.banners)) {
+    console.log('🎯 Configurações de banners alteradas, recriando...');
+    recreateBannerViews();
+  }
+
+  // User sites changes (new pages added/removed)
+  if (JSON.stringify(previous.userSites) !== JSON.stringify(current.userSites)) {
+    console.log('📄 Páginas do usuário alteradas, recriando todas as views...');
+    // Delay para garantir que a janela esteja pronta
+    setTimeout(() => {
+      recreateAllViews();
+    }, 100);
+  }
+
+  // Stealth settings changes
+  if (JSON.stringify(previous.stealth) !== JSON.stringify(current.stealth)) {
+    console.log('🕵️ Configurações de stealth alteradas...');
+    if (current.stealth.enabled && stealthManager) {
+      enableStealthMode();
+    } else if (!current.stealth.enabled && stealthManager) {
+      disableStealthMode();
+    }
+  }
+
+  // Scroll speed changes
+  if (previous.scrollSpeed !== current.scrollSpeed) {
+    console.log(`✅ Velocidade de scroll alterada para: ${current.scrollSpeed}px`);
+  }
+
+  console.log('✅ Todas as mudanças aplicadas dinamicamente!');
 }
 
 function loadSettingsFromDisk() {
@@ -272,9 +323,173 @@ function loadContent(view, entry) {
   }
 }
 
+// Recreate all views (pages and banners) when settings change
+function recreateAllViews() {
+  console.log('🔄 Recriando todas as views com novas configurações...');
+  
+  // Check if mainWindow exists
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    console.log('❌ MainWindow não existe ou foi destruída, não é possível recriar views');
+    return;
+  }
+  
+  try {
+    // Remove existing content views and properly destroy them
+    webContentViews.forEach(view => {
+      if (view && !view.webContents.isDestroyed()) {
+        // Stop all media and clear resources
+        try {
+          view.webContents.executeJavaScript(`
+            // Stop all audio/video
+            const videos = document.querySelectorAll('video');
+            videos.forEach(video => {
+              video.pause();
+              video.currentTime = 0;
+              video.src = '';
+            });
+            
+            const audios = document.querySelectorAll('audio');
+            audios.forEach(audio => {
+              audio.pause();
+              audio.currentTime = 0;
+              audio.src = '';
+            });
+            
+            // Clear all timers and intervals
+            const highestTimeoutId = setTimeout(() => {}, 0);
+            for (let i = 0; i < highestTimeoutId; i++) {
+              clearTimeout(i);
+            }
+            
+            const highestIntervalId = setInterval(() => {}, 0);
+            for (let i = 0; i < highestIntervalId; i++) {
+              clearInterval(i);
+            }
+          `).catch(() => {
+            // Ignore errors if page is already destroyed
+          });
+        } catch (error) {
+          console.log('⚠️ Erro ao limpar mídia da view:', error.message);
+        }
+        
+        // Remove from content view
+        mainWindow.contentView.removeChildView(view);
+        
+        // Destroy the webContents
+        if (!view.webContents.isDestroyed()) {
+          view.webContents.destroy();
+        }
+      }
+    });
+    webContentViews = [];
+    
+    // Remove existing banner views and properly destroy them
+    bannerViews.forEach(bannerData => {
+      if (bannerData.view && !bannerData.view.webContents.isDestroyed()) {
+        // Stop any media in banners
+        try {
+          bannerData.view.webContents.executeJavaScript(`
+            // Stop any media in banners
+            const videos = document.querySelectorAll('video');
+            videos.forEach(video => {
+              video.pause();
+              video.currentTime = 0;
+              video.src = '';
+            });
+            
+            const audios = document.querySelectorAll('audio');
+            audios.forEach(audio => {
+              audio.pause();
+              audio.currentTime = 0;
+              audio.src = '';
+            });
+          `).catch(() => {
+            // Ignore errors if page is already destroyed
+          });
+        } catch (error) {
+          console.log('⚠️ Erro ao limpar mídia do banner:', error.message);
+        }
+        
+        mainWindow.contentView.removeChildView(bannerData.view);
+        
+        // Destroy the webContents
+        if (!bannerData.view.webContents.isDestroyed()) {
+          bannerData.view.webContents.destroy();
+        }
+      }
+    });
+    bannerViews = [];
+    
+    // Reset scroll position
+    offset = 0;
+    targetOffset = 0;
+    
+    // Recreate all content views
+    const sources = buildSources(staticSources, appSettings.userSites, placeholderPage);
+    console.log(`📄 Recriando ${sources.length} páginas...`);
+    
+    sources.forEach((entry, index) => {
+      const view = new WebContentsView({
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+
+      view.setBounds({
+        x: 0,
+        y: index * CONTENT_HEIGHT,
+        width: CONTENT_WIDTH,
+        height: CONTENT_HEIGHT,
+      });
+
+      mainWindow.contentView.addChildView(view);
+      webContentViews.push(view);
+      loadContent(view, entry);
+    });
+    
+    // Recreate banner views
+    createBannerViews(sources);
+    
+    // Reposition all views
+    repositionAllCardViews();
+    
+    console.log('✅ Todas as views recriadas com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro ao recriar views:', error.message);
+  }
+}
+
+// Recreate banner views when settings change
+function recreateBannerViews() {
+  console.log('🎯 Recriando banners com novas configurações...');
+  
+  // Remove existing banner views
+  bannerViews.forEach(bannerData => {
+    if (bannerData.view && !bannerData.view.webContents.isDestroyed()) {
+      mainWindow.contentView.removeChildView(bannerData.view);
+    }
+  });
+  bannerViews = [];
+  
+  // Recreate with current settings
+  const sources = buildSources(staticSources, appSettings.userSites, placeholderPage);
+  createBannerViews(sources);
+  
+  // Reposition all views
+  repositionAllCardViews();
+  
+  console.log('✅ Banners recriados com sucesso!');
+}
+
 // Create banner views between content views
 function createBannerViews(sources) {
+  console.log('🎯 Creating banner views...');
+  console.log('🎯 Banners enabled:', appSettings.banners.enabled);
+  console.log('🎯 Global banners enabled:', bannerSettings.globalEnabled);
+  
   if (!appSettings.banners.enabled || !bannerSettings.globalEnabled) {
+    console.log('🎯 Banners disabled, skipping...');
     return;
   }
 
@@ -282,7 +497,13 @@ function createBannerViews(sources) {
     banner.enabled && appSettings.banners.enabledBanners.includes(banner.id)
   );
 
-  if (enabledBanners.length === 0) return;
+  console.log('🎯 Enabled banners:', enabledBanners.length);
+  console.log('🎯 Banner settings:', appSettings.banners);
+
+  if (enabledBanners.length === 0) {
+    console.log('🎯 No enabled banners found');
+    return;
+  }
 
   let bannerIndex = 0;
   
@@ -546,14 +767,24 @@ function openSettingsWindow() {
     return;
   }
 
+  // Calcular posição central da tela
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const workArea = primaryDisplay.workArea;
+  const windowWidth = 500;
+  const windowHeight = 600;
+  const x = Math.round((workArea.width - windowWidth) / 2);
+  const y = Math.round((workArea.height - windowHeight) / 2);
+
   settingsWindow = new BrowserWindow({
-    width: 420,
-    height: 360,
+    width: windowWidth,
+    height: windowHeight,
+    x: x,
+    y: y,
     resizable: false,
     minimizable: false,
     maximizable: false,
     show: true,
-    title: "Settings",
+    title: "Configurações - Shii!",
     parent: mainWindow,
     modal: false,
     webPreferences: {
@@ -588,17 +819,8 @@ function registerSettingsIpc() {
       shortcuts: { ...(appSettings.shortcuts || {}), ...(partial.shortcuts || {}) },
     };
 
-    // Apply side-effects
-    if (previous.alwaysOnTop !== appSettings.alwaysOnTop) {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.setAlwaysOnTop(appSettings.alwaysOnTop);
-      }
-    }
-
-    // Handle auto-start changes
-    if (previous.autoStart !== appSettings.autoStart) {
-      setAutoStart(appSettings.autoStart);
-    }
+    // Apply side-effects dynamically
+    applySettingsChanges(previous, appSettings);
 
     // Re-register global shortcuts if changed
     if (JSON.stringify(previous.shortcuts) !== JSON.stringify(appSettings.shortcuts)) {
@@ -612,10 +834,50 @@ function registerSettingsIpc() {
     return appSettings;
   });
 
-  ipcMain.handle("app:restart", async () => {
-    console.log('App restart requested');
-    app.relaunch();
-    app.exit(0);
+  // Add new page handler
+  ipcMain.handle("app:addPage", async (event, url) => {
+    try {
+      console.log(`📄 Adicionando nova página via IPC: ${url}`);
+      addNewPageFromSettings(url);
+      return { success: true, message: 'Página adicionada com sucesso!' };
+    } catch (error) {
+      console.error('❌ Erro ao adicionar página:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  // Remove page handler
+  ipcMain.handle("app:removePage", async (event, url) => {
+    try {
+      console.log(`📄 Removendo página via IPC: ${url}`);
+      
+      if (appSettings.userSites) {
+        const index = appSettings.userSites.indexOf(url);
+        if (index > -1) {
+          appSettings.userSites.splice(index, 1);
+          saveSettingsToDisk(appSettings);
+          recreateAllViews();
+          return { success: true, message: 'Página removida com sucesso!' };
+        }
+      }
+      
+      return { success: false, message: 'Página não encontrada' };
+    } catch (error) {
+      console.error('❌ Erro ao remover página:', error.message);
+      return { success: false, message: error.message };
+    }
+  });
+
+  // Reload all views handler
+  ipcMain.handle("app:reloadViews", async () => {
+    try {
+      console.log('🔄 Recarregando todas as views via IPC...');
+      recreateAllViews();
+      return { success: true, message: 'Views recarregadas com sucesso!' };
+    } catch (error) {
+      console.error('❌ Erro ao recarregar views:', error.message);
+      return { success: false, message: error.message };
+    }
   });
 }
 
@@ -664,6 +926,10 @@ function toggleAutoStart() {
 // Set auto start with Windows
 function setAutoStart(enabled) {
   try {
+    // Método padrão usando registry
+    console.log(`🔄 Configurando auto-start: ${enabled ? 'ativar' : 'desativar'}`);
+    console.log(`🔄 Exec path: ${process.execPath}`);
+    
     const options = {
       openAtLogin: enabled,
       openAsHidden: false,
@@ -672,9 +938,28 @@ function setAutoStart(enabled) {
       args: []
     };
     
-    app.setLoginItemSettings(options);
-    console.log(`✅ Auto-start ${enabled ? 'ativado' : 'desativado'} com sucesso`);
-    return true;
+    console.log(`🔄 Opções de auto-start:`, options);
+    
+    // Verificar se o app está empacotado
+    if (app.isPackaged) {
+      console.log('📦 App empacotado, configurando auto-start...');
+      app.setLoginItemSettings(options);
+    } else {
+      console.log('⚠️ App em desenvolvimento, auto-start não configurado');
+      return false;
+    }
+    
+    // Verificar se foi configurado corretamente
+    const currentSettings = app.getLoginItemSettings();
+    console.log(`🔄 Configuração atual:`, currentSettings);
+    
+    if (currentSettings.openAtLogin === enabled) {
+      console.log(`✅ Auto-start ${enabled ? 'ativado' : 'desativado'} via registry`);
+      return true;
+    } else {
+      console.log(`❌ Falha ao configurar auto-start. Esperado: ${enabled}, Atual: ${currentSettings.openAtLogin}`);
+      return false;
+    }
   } catch (error) {
     console.error('❌ Erro ao configurar auto-start:', error.message);
     return false;
@@ -684,13 +969,39 @@ function setAutoStart(enabled) {
 // Check if auto-start is enabled
 function isAutoStartEnabled() {
   try {
+    if (!app.isPackaged) {
+      console.log('⚠️ App em desenvolvimento, auto-start não disponível');
+      return false;
+    }
+    
     const loginItemSettings = app.getLoginItemSettings();
+    console.log(`🔍 Verificando auto-start atual:`, loginItemSettings);
     return loginItemSettings.openAtLogin;
   } catch (error) {
     console.error('❌ Erro ao verificar auto-start:', error.message);
     return false;
   }
 }
+
+// ===== FUNÇÕES PARA PASTA DE INICIALIZAÇÃO DO WINDOWS =====
+
+// Obter caminho da pasta de inicialização do Windows
+function getStartupFolderPath() {
+  const os = require('os');
+  const homeDir = os.homedir();
+  return path.join(homeDir, 'AppData', 'Roaming', 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup');
+}
+
+// Obter caminho do executável atual
+function getExecutablePath() {
+  return process.execPath;
+}
+
+// Obter nome do arquivo de atalho
+function getShortcutName() {
+  return 'Shii!.lnk';
+}
+
 
 // Set scroll speed
 function setScrollSpeed(speed) {
@@ -727,6 +1038,8 @@ function toggleMinimizeRestore() {
 
 // Add new content dynamically
 function addNewContent(source) {
+  console.log('📄 Adicionando nova página dinamicamente...');
+  
   const view = new WebContentsView({
     webPreferences: {
       nodeIntegration: false,
@@ -745,15 +1058,45 @@ function addNewContent(source) {
   mainWindow.contentView.addChildView(view);
   webContentViews.push(view);
   loadContent(view, source);
+  
+  // Reposition all views to account for new content
+  repositionAllCardViews();
+  
+  console.log('✅ Nova página adicionada com sucesso!');
+}
+
+// Add new page from settings (called when user adds a site)
+function addNewPageFromSettings(url) {
+  console.log(`📄 Adicionando nova página: ${url}`);
+  
+  // Add to user sites
+  if (!appSettings.userSites) {
+    appSettings.userSites = [];
+  }
+  
+  appSettings.userSites.push(url);
+  
+  // Save settings
+  saveSettingsToDisk(appSettings);
+  
+  // Recreate all views to include new page
+  recreateAllViews();
+  
+  console.log('✅ Nova página adicionada e views recriadas!');
 }
 
 // App event handlers
 app.whenReady().then(() => {
+  console.log('🚀 App is ready, starting initialization...');
+  console.log('📁 App is packaged:', app.isPackaged);
+  console.log('📁 Resources path:', process.resourcesPath);
+  console.log('📁 Exec path:', process.execPath);
+  
   // Load settings from disk before creating windows
   const diskSettings = loadSettingsFromDisk();
   console.log('Loaded settings from disk:', diskSettings);
   
-  // Sync auto-start setting with Windows registry
+  // Sync auto-start setting with Windows registry or startup folder
   if (diskSettings.autoStart !== undefined) {
     const actualAutoStart = isAutoStartEnabled();
     if (diskSettings.autoStart !== actualAutoStart) {
@@ -761,6 +1104,7 @@ app.whenReady().then(() => {
       setAutoStart(diskSettings.autoStart);
     }
   }
+  
   
   // Ensure all required shortcuts exist
   if (!diskSettings.shortcuts) diskSettings.shortcuts = {};
@@ -772,17 +1116,24 @@ app.whenReady().then(() => {
   if (!diskSettings.banners) diskSettings.banners = {
     enabled: true,
     enabledBanners: ['gabriel-banner', 'coffee-banner'],
-    height: 30,
-    containerHeight: 30,
+    height: 15,
+    containerHeight: 15,
     theme: 'default'
   };
   
-  appSettings = { ...appSettings, ...diskSettings };
+  // Merge settings properly, preserving defaults
+  appSettings = {
+    ...appSettings,
+    ...diskSettings,
+    shortcuts: { ...appSettings.shortcuts, ...(diskSettings.shortcuts || {}) },
+    banners: { ...appSettings.banners, ...(diskSettings.banners || {}) },
+    stealth: { ...appSettings.stealth, ...(diskSettings.stealth || {}) }
+  };
   
   // Forçar atualização dos banners para as novas configurações
-  if (appSettings.banners && (appSettings.banners.height === 10 || appSettings.banners.height === 15)) {
-    appSettings.banners.height = 30;
-    appSettings.banners.containerHeight = 30;
+  if (appSettings.banners && (appSettings.banners.height === 10 || appSettings.banners.height === 20 || appSettings.banners.height === 30)) {
+    appSettings.banners.height = 15;
+    appSettings.banners.containerHeight = 15;
     saveSettingsToDisk(appSettings);
   }
 
