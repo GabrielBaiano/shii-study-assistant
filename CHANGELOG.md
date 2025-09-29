@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2024-12-29
+
+### Added
+- **Redesigned Settings Menu**: Complete UI overhaul inspired by Gemini Chat interface
+- **Modular Architecture**: Separated CSS and JavaScript from HTML for better maintainability
+- **Global Configuration Variables**: Centralized configuration system for easier customization
+- **Dynamic Configuration Reload**: Settings changes apply instantly without app restart
+- **Enhanced Stealth Mode**: Improved native module compilation and functionality
+- **Centralized Window Positioning**: Settings window now opens in the center of the screen
+
+### Improved
+- **Settings Interface**: Modern, clean design with better organization and visual hierarchy
+- **Banner System**: Reduced banner height to 15px for better visual balance
+- **Auto-Start Functionality**: Simplified to use only registry method (more reliable)
+- **Build System**: Optimized for ZIP distribution with better resource management
+- **Code Organization**: Better separation of concerns and maintainability
+
+### Removed
+- **Startup Method Selection**: Removed confusing startup folder option, keeping only registry method
+- **Redundant UI Elements**: Cleaned up unused configuration options
+- **Complex Auto-Start Logic**: Simplified to single, reliable method
+
+### Fixed
+- **Syntax Errors**: Resolved JavaScript syntax issues in main process
+- **Module Compilation**: Fixed native module compilation for stealth functionality
+- **Configuration Loading**: Improved settings loading and validation
+- **Memory Management**: Better cleanup of resources when pages are removed
+
+### Technical Details
+- Refactored settings menu with modern CSS variables and responsive design
+- Implemented debounced configuration updates for better performance
+- Enhanced error handling and logging throughout the application
+- Improved build configuration for better distribution and packaging
+
 ## [1.0.1] - 2024-09-25
 
 ### Added
