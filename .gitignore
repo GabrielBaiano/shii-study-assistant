@@ -162,3 +162,7 @@ create-release.bat
 # Temporary files
 *.tmp
 *.temp
+
+# VS Code workspace files (personal configuration)
+*.code-workspace
+.vscode/
