@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stealth Config</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* RESET & BASE */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            font-family: 'Fira Code', 'Segoe UI', Tahoma, monospace;
+            background: transparent;
+            color: #e5e5e7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* WRAPPER COM BORDAS REDONDAS */
+        .stealth-wrapper {
+            width: 100%;
+            height: 100%;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 20px;
+            box-shadow: none;
+            overflow: hidden;
+        }
+
+        /* CONTAINER PRINCIPAL */
+        .stealth-container {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: none;
+        }
+
+        /* STATUS INDICATOR */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444; /* Vermelho por padrão */
+            transition: background-color 0.3s ease;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.3);
+        }
+
+        .status-dot.active {
+            background: #10b981; /* Verde quando ativo */
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .status-text {
+            font-size: 11px;
+            font-weight: 500;
+            font-family: 'Fira Code', monospace;
+            color: #e5e5e7;
+        }
+
+        /* SWITCH TOGGLE */
+        .switch-container {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .switch-input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ef4444;
+            transition: 0.3s;
+            border-radius: 50px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .switch-input:checked + .switch-slider {
+            background-color: #10b981;
+        }
+
+        .switch-input:checked + .switch-slider:before {
+            transform: translateX(20px);
+        }
+
+        .switch-slider:hover {
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 8px rgba(0, 0, 0, 0.1);
+            border-radius: 50px;
+        }
+
+
+        /* TÍTULO */
+        .stealth-title {
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Fira Code', monospace;
+            color: #e5e5e7;
+            margin-bottom: 2px;
+        }
+
+        .stealth-subtitle {
+            font-size: 9px;
+            font-family: 'Fira Code', monospace;
+            color: #8e8e93;
+        }
+
+        /* ANIMAÇÕES */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .status-dot.pulse {
+            animation: pulse 2s infinite;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 300px) {
+            .stealth-container {
+                padding: 12px;
+            }
+            
+            .stealth-title {
+                font-size: 14px;
+            }
+            
+            .toggle-button {
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stealth-wrapper">
+        <div class="stealth-container">
+            <div class="status-indicator">
+                <div class="status-dot" id="status-dot"></div>
+                <div>
+                    <div class="stealth-title">Stealth Mode</div>
+                    <div class="stealth-subtitle" id="status-text">Desligado</div>
+                </div>
+            </div>
+            
+            
+            <label class="switch-container">
+                <input type="checkbox" class="switch-input" id="toggle-switch">
+                <span class="switch-slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const toggleSwitch = document.getElementById('toggle-switch');
+        
+        let isActive = true; // Por padrão, stealth já ativo
+
+        // Função para alternar o status
+        async function toggleStatus() {
+            isActive = !isActive;
+            
+            try {
+                // Chama o IPC handler para ativar/desativar stealth
+                const action = isActive ? 'enable' : 'disable';
+                console.log(`🕵️ Tentando ${action} stealth...`);
+                
+                const result = await ipcRenderer.invoke('toggle-stealth', action);
+                
+                if (result.success) {
+                    updateUI();
+                    console.log(`✅ Stealth ${isActive ? 'ATIVADO' : 'DESATIVADO'} com sucesso`);
+                } else {
+                    // Reverter estado se falhou
+                    isActive = !isActive;
+                    console.error('❌ Erro ao alternar stealth:', result.error);
+                    updateUI();
+                }
+            } catch (error) {
+                // Reverter estado se falhou
+                isActive = !isActive;
+                console.error('❌ Erro ao chamar toggle-stealth:', error);
+                updateUI();
+            }
+        }
+
+        // Função para atualizar a UI
+        function updateUI() {
+            if (isActive) {
+                // Ativar
+                statusDot.classList.add('active', 'pulse');
+                statusText.textContent = 'Ativo';
+                toggleSwitch.checked = true;
+            } else {
+                // Desativar
+                statusDot.classList.remove('active', 'pulse');
+                statusText.textContent = 'Desligado';
+                toggleSwitch.checked = false;
+            }
+        }
+
+
+
+        // Event listeners
+        toggleSwitch.addEventListener('change', toggleStatus);
+
+        // Função para definir status externamente
+        window.setStealthStatus = function(status) {
+            if (status !== isActive) {
+                isActive = status;
+                updateUI();
+            }
+        };
+        
+        // Função para inicializar stealth automaticamente
+        async function initializeStealth() {
+            try {
+                console.log('🕵️ Inicializando stealth automaticamente...');
+                
+                // Ativar stealth via IPC
+                const result = await ipcRenderer.invoke('toggle-stealth', 'enable');
+                
+                if (result && result.success) {
+                    console.log('✅ Stealth ativado automaticamente');
+                    isActive = true;
+                    updateUI();
+                } else {
+                    console.log('⚠️ Falha ao ativar stealth automaticamente:', result?.error || 'Erro desconhecido');
+                    isActive = false;
+                    updateUI();
+                }
+            } catch (error) {
+                console.error('❌ Erro ao inicializar stealth:', error);
+                isActive = false;
+                updateUI();
+            }
+        }
+
+        // Função para obter status atual
+        window.getStealthStatus = function() {
+            return isActive;
+        };
+
+        // Inicialização
+        console.log('🕵️ Stealth Config Widget carregado');
+        
+        // Verificar status inicial (opcional - pode ser implementado no futuro)
+        // Por padrão, assume que o stealth está desativado
+        updateUI();
+        
+        // Ativar stealth automaticamente ao carregar a página
+        initializeStealth();
+    </script>
+</body>
+
+</html>

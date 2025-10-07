@@ -1,0 +1,14 @@
+{
+  "activeWidgets": [
+    "clock",
+    "stealth",
+    "gemini",
+    "organizer"
+  ],
+  "window": {
+    "frame": false,
+    "skipTaskbar": true,
+    "resizable": true,
+    "alwaysOnTop": true
+  }
+}

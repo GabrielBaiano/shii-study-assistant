@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget de Relógio</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <style>
+        /* 1. Prepara a página para ser transparente */
+        html,
+        body {
+            background: transparent;
+            /* O MAIS IMPORTANTE: Deixa a página invisível */
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* Evita qualquer barra de rolagem */
+        }
+
+        /* 2. O container do widget, que será a única coisa visível */
+        pre {
+            /* Ocupa 100% da janela transparente do Electron */
+            width: 100vw;
+            height: 300px;
+            margin: 0;
+
+            /* Adiciona o fundo e as bordas arredondadas */
+            background: rgba(40, 44, 52, 0.85);
+            border-radius: 20px;
+
+            /* Centraliza o conteúdo do relógio */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            /* Garante que o padding não quebre o layout */
+            box-sizing: border-box;
+            padding: 1em;
+
+            /* ESSENCIAL PARA ELECTRON: Desabilita arrastar a janela */
+            -webkit-app-region: no-drag;
+        }
+
+        pre>code {
+            background: none !important;
+            font-family: 'SF Mono', 'Fira Code', Courier, monospace;
+            color: #ccc;
+            /* Permite selecionar o texto sem arrastar a janela */
+            -webkit-app-region: no-drag;
+        }
+    </style>
+</head>
+
+<body>
+
+    <pre><code id="time-output" class="language-javascript">// Carregando...</code></pre>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script>
+        const outputElement = document.getElementById('time-output');
+        const diasDaSemana = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+        function atualizarHorario() {
+            const agora = new Date();
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const dia = String(agora.getDate()).padStart(2, '0');
+            const nomeDoDia = diasDaSemana[agora.getDay()];
+            const hora = String(agora.getHours()).padStart(2, '0');
+            const minuto = String(agora.getMinutes()).padStart(2, '0');
+            const segundo = String(agora.getSeconds()).padStart(2, '0');
+            const totalSegundosNoDia = 24 * 60 * 60;
+            const segundosPassados = (agora.getHours() * 3600) + (agora.getMinutes() * 60) + agora.getSeconds();
+            const progressoDoDia = (segundosPassados / totalSegundosNoDia) * 100;
+
+            const currentTime = {
+                year: ano,
+                month: mes,
+                day: dia,
+                dayOfWeek: nomeDoDia,
+                hour: hora,
+                minute: minuto,
+                second: segundo,
+                dayProgress: `${progressoDoDia.toFixed(2)}%`
+            };
+
+            const codigoFormatado = `const currentTime = {\n    year: ${currentTime.year},\n    month: ${currentTime.month},\n    day: ${currentTime.day},\n    dayOfWeek: "${currentTime.dayOfWeek}",\n    hour: ${hora},\n    minute: ${minuto},\n    second: ${segundo},\n    dayProgress: "${currentTime.dayProgress}"\n};`;
+
+            outputElement.textContent = codigoFormatado;
+            Prism.highlightElement(outputElement);
+        }
+        setInterval(atualizarHorario, 1000);
+        atualizarHorario();
+    </script>
+</body>
+
+</html>

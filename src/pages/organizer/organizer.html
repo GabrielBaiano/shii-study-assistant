@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organizador de Views</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <style>
+        * {
+            font-family: 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .apple-bg {
+            background: transparent;
+        }
+        
+        .apple-card {
+            background: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(60, 60, 60, 0.3);
+        }
+        
+        .apple-item {
+            background: rgba(40, 40, 40, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(80, 80, 80, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 32px;
+        }
+        
+        .apple-item:hover {
+            background: rgba(60, 60, 60, 0.9);
+            transform: translateY(-1px);
+        }
+        
+        .dragging {
+            opacity: 0.8 !important;
+            background: rgba(0, 122, 255, 0.1) !important;
+            border: 2px dashed #007AFF !important;
+            transform: scale(1.02);
+        }
+
+        .sortable-drag {
+            opacity: 0.9 !important;
+            transform: rotate(1deg) scale(1.05);
+            cursor: grabbing;
+        }
+
+        .apple-button {
+            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
+            border: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .apple-button:hover {
+            transform: translateY(-1px);
+        }
+        
+        .apple-button-secondary {
+            background: rgba(60, 60, 60, 0.8);
+            border: 1px solid rgba(100, 100, 100, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .apple-button-secondary:hover {
+            background: rgba(80, 80, 80, 0.9);
+            transform: translateY(-1px);
+        }
+        
+        .apple-text-primary {
+            color: #e5e5e7;
+        }
+        
+        .apple-text-secondary {
+            color: #8e8e93;
+        }
+        
+        .apple-icon {
+            background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .drag-handle {
+            color: #8e8e93;
+            transition: color 0.2s ease;
+        }
+        
+        .drag-handle:hover {
+            color: #007AFF;
+        }
+        
+        .success-animation {
+            animation: successPulse 0.6s ease-out;
+        }
+        
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Estilo da barra de scroll */
+        .scrollable-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-track {
+            background: rgba(40, 40, 40, 0.3);
+            border-radius: 3px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-thumb {
+            background: rgba(0, 122, 255, 0.5);
+            border-radius: 3px;
+        }
+        
+        .scrollable-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 122, 255, 0.7);
+        }
+        
+        /* Estilo do botão de remover */
+        .remove-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .remove-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Permitir seleção apenas em inputs e textareas se necessário */
+        input, textarea {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+        
+        /* Garantir que botões sejam clicáveis */
+        button, .drag-handle, .remove-btn {
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body class="apple-bg min-h-screen p-0 m-0">
+
+    <div class="apple-card rounded-3xl p-6 w-full h-screen fade-in flex flex-col">
+        <div class="flex items-center mb-6">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mr-4 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-semibold apple-text-primary">Organizador</h1>
+                <p class="text-sm apple-text-secondary">Reorganize suas views</p>
+            </div>
+        </div>
+
+
+        <div class="flex-1 overflow-y-auto mb-8 scrollable-list">
+            <ul id="sortable-list" class="space-y-1"></ul>
+        </div>
+
+        <div class="flex flex-row space-x-3 mt-auto">
+            <button id="refresh-btn"
+                class="apple-button flex-1 flex items-center justify-center text-white font-medium py-2 px-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Atualizar
+            </button>
+            <button id="add-item-btn"
+                class="apple-button-secondary flex-1 flex items-center justify-center apple-text-primary font-medium py-2 px-4 rounded-xl focus:outline-none focus:ring-4 focus:ring-gray-500/20">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Adicionar
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar páginas -->
+    <div id="add-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="apple-card rounded-2xl p-6 w-96 h-96 flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold apple-text-primary">Adicionar Página</h2>
+                <button id="close-modal" class="text-gray-400 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Tabs para alternar entre páginas locais e URLs -->
+            <div class="flex mb-4 border-b border-gray-600">
+                <button id="local-tab" class="px-4 py-2 text-sm font-medium apple-text-primary border-b-2 border-blue-500">
+                    Páginas Locais
+                </button>
+                <button id="web-tab" class="px-4 py-2 text-sm font-medium text-gray-400 border-b-2 border-transparent hover:text-white">
+                    URL Externa
+                </button>
+            </div>
+
+            <!-- Conteúdo das páginas locais -->
+            <div id="local-content" class="flex-1 flex flex-col min-h-0">
+                <div class="text-sm text-gray-400 mb-3 flex-shrink-0">Selecione uma página do projeto:</div>
+                <div id="local-pages-list" class="flex-1 overflow-y-auto space-y-1">
+                    <!-- Páginas locais serão carregadas aqui -->
+                </div>
+            </div>
+
+            <!-- Conteúdo para URL externa -->
+            <div id="web-content" class="hidden flex-1 flex flex-col min-h-0">
+                <div class="flex-1 overflow-y-auto space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium apple-text-primary mb-2">URL da Página</label>
+                        <input type="url" id="web-url" placeholder="https://exemplo.com" 
+                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium apple-text-primary mb-2">Altura (px)</label>
+                        <input type="number" id="web-height" value="400" placeholder="400" min="100" max="2000" 
+                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium apple-text-primary mb-2">Nome (opcional)</label>
+                        <input type="text" id="web-name" placeholder="Nome da página" 
+                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6 flex-shrink-0">
+                <button id="cancel-add" class="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                    Cancelar
+                </button>
+                <button id="confirm-add" class="apple-button px-4 py-2 text-sm font-medium text-white rounded-lg">
+                    Adicionar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const list = document.getElementById('sortable-list');
+            const addButton = document.getElementById('add-item-btn');
+            const refreshButton = document.getElementById('refresh-btn');
+            
+            // Elementos do modal
+            const modal = document.getElementById('add-modal');
+            const closeModal = document.getElementById('close-modal');
+            const cancelAdd = document.getElementById('cancel-add');
+            const confirmAdd = document.getElementById('confirm-add');
+            const localTab = document.getElementById('local-tab');
+            const webTab = document.getElementById('web-tab');
+            const localContent = document.getElementById('local-content');
+            const webContent = document.getElementById('web-content');
+            const localPagesList = document.getElementById('local-pages-list');
+            const webUrl = document.getElementById('web-url');
+            const webHeight = document.getElementById('web-height');
+            const webName = document.getElementById('web-name');
+
+            // Carrega a ordem atual das views do processo principal (baseada em ACTIVE_WIDGETS)
+            let widgetOrder = await ipcRenderer.invoke('get-active-widgets');
+
+            // Mapeamento de nomes amigáveis para as views
+            const viewNames = {
+                'clock': 'Relógio',
+                'pomodoro': 'Pomodoro',
+                'gemini': 'Gemini AI',
+                'organizer': 'Organizador',
+                'settings': 'Configurações',
+                'stealth': 'Stealth',
+                'placeholder': 'Placeholder',
+                'about': 'Sobre'
+            };
+
+            // Carrega as páginas disponíveis do JSON
+            let availablePages = [];
+            let selectedPage = null;
+            let currentTab = 'local';
+
+            async function loadAvailablePages() {
+                try {
+                    // Obtém TODOS os widgets disponíveis do processo principal
+                    const allConfig = await ipcRenderer.invoke('get-all-widgets-config');
+                    
+                    // Filtra apenas widgets que não estão ativos
+                    const activeWidgets = await ipcRenderer.invoke('get-active-widgets');
+                    const activeKeys = new Set(activeWidgets);
+                    
+                    // Cria lista de widgets disponíveis (todos exceto os ativos)
+                    availablePages = Object.keys(allConfig)
+                        .filter(key => !activeKeys.has(key))
+                        .map(key => ({
+                            id: key,
+                            name: viewNames[key] || key,
+                            description: `Widget ${key}`,
+                            type: 'widget',
+                            url: allConfig[key].url,
+                            height: allConfig[key].height
+                        }));
+                    
+                    renderLocalPages();
+                } catch (error) {
+                    console.error('Erro ao carregar configuração:', error);
+                    availablePages = [];
+                }
+            }
+
+            function renderLocalPages() {
+                localPagesList.innerHTML = '';
+                
+                console.log('Widgets disponíveis para adicionar:', availablePages);
+                console.log('Widgets ativos atuais:', widgetOrder);
+                
+                if (availablePages.length === 0) {
+                    localPagesList.innerHTML = '<div class="text-gray-400 text-sm text-center py-4">Todos os widgets já estão ativos</div>';
+                    return;
+                }
+
+                availablePages.forEach(page => {
+                    const pageItem = document.createElement('div');
+                    pageItem.className = 'flex items-center p-2 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors';
+                    pageItem.innerHTML = `
+                        <div class="flex-1">
+                            <div class="font-medium text-sm apple-text-primary">${page.name}</div>
+                            <div class="text-xs text-gray-400">${page.description}</div>
+                        </div>
+                        <div class="text-xs text-gray-500">${page.type}</div>
+                    `;
+                    
+                    pageItem.addEventListener('click', () => {
+                        // Remove seleção anterior
+                        document.querySelectorAll('.bg-blue-600').forEach(el => el.classList.remove('bg-blue-600'));
+                        // Adiciona seleção atual
+                        pageItem.classList.add('bg-blue-600');
+                        selectedPage = page;
+                    });
+                    
+                    localPagesList.appendChild(pageItem);
+                });
+            }
+
+            // Funções do modal
+            function showModal() {
+                modal.classList.remove('hidden');
+                loadAvailablePages();
+                selectedPage = null;
+                currentTab = 'local';
+                switchTab('local');
+            }
+
+            function hideModal() {
+                modal.classList.add('hidden');
+                selectedPage = null;
+                // Limpa formulários
+                webUrl.value = '';
+                webHeight.value = '400';
+                webName.value = '';
+                document.querySelectorAll('.bg-blue-600').forEach(el => el.classList.remove('bg-blue-600'));
+            }
+
+            function switchTab(tab) {
+                currentTab = tab;
+                
+                if (tab === 'local') {
+                    localTab.classList.add('apple-text-primary', 'border-blue-500');
+                    localTab.classList.remove('text-gray-400', 'border-transparent');
+                    webTab.classList.remove('apple-text-primary', 'border-blue-500');
+                    webTab.classList.add('text-gray-400', 'border-transparent');
+                    localContent.classList.remove('hidden');
+                    webContent.classList.add('hidden');
+                } else {
+                    webTab.classList.add('apple-text-primary', 'border-blue-500');
+                    webTab.classList.remove('text-gray-400', 'border-transparent');
+                    localTab.classList.remove('apple-text-primary', 'border-blue-500');
+                    localTab.classList.add('text-gray-400', 'border-transparent');
+                    webContent.classList.remove('hidden');
+                    localContent.classList.add('hidden');
+                }
+            }
+
+            async function addSelectedPage() {
+                console.log('Tentando adicionar widget, aba atual:', currentTab);
+                
+                if (currentTab === 'local') {
+                    if (!selectedPage) {
+                        alert('Selecione um widget para adicionar');
+                        return;
+                    }
+                    
+                    try {
+                        // Adiciona o widget à lista ativa
+                        const result = await ipcRenderer.invoke('add-active-widget', selectedPage.id);
+                        
+                        if (result.success) {
+                            // Atualiza a lista local
+                            widgetOrder.push(selectedPage.id);
+                            renderWidgetList(widgetOrder);
+                            hideModal();
+                            // Recarrega a lista de páginas disponíveis
+                            await loadAvailablePages();
+                        } else {
+                            alert('Erro ao adicionar widget: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao adicionar widget:', error);
+                        alert('Erro ao adicionar widget');
+                    }
+                } else {
+                    // Para URLs externas, mantém a lógica original
+                    const url = webUrl.value.trim();
+                    const height = parseInt(webHeight.value) || 400;
+                    const name = webName.value.trim() || 'Página Web';
+                    
+                    console.log('Dados da URL externa:', { url, height, name });
+                    
+                    if (!url) {
+                        alert('Digite uma URL válida');
+                        return;
+                    }
+                    
+                    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                        alert('A URL deve começar com http:// ou https://');
+                        return;
+                    }
+                    
+                    if (height < 100 || height > 2000) {
+                        alert('A altura deve estar entre 100 e 2000 pixels');
+                        return;
+                    }
+                    
+                    try {
+                        const key = 'web_' + Date.now(); // Gera chave única
+                        const result = await ipcRenderer.invoke('add-view', {
+                            key: key,
+                            config: {
+                                url: url,
+                                height: height,
+                                visible: true,
+                                webPreferences: {
+                                    nodeIntegration: false,
+                                    contextIsolation: true
+                                }
+                            }
+                        });
+                        
+                        if (result.success) {
+                            // Atualiza o mapeamento de nomes
+                            viewNames[key] = name;
+                            // Atualiza a lista local
+                            widgetOrder.push(key);
+                            renderWidgetList(widgetOrder);
+                            hideModal();
+                        } else {
+                            alert('Erro ao adicionar página: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao adicionar URL:', error);
+                        alert('Erro ao adicionar URL');
+                    }
+                }
+            }
+
+            // Event listeners do modal
+            addButton.addEventListener('click', showModal);
+            closeModal.addEventListener('click', hideModal);
+            cancelAdd.addEventListener('click', hideModal);
+            confirmAdd.addEventListener('click', addSelectedPage);
+            localTab.addEventListener('click', () => switchTab('local'));
+            webTab.addEventListener('click', () => switchTab('web'));
+
+            // Fecha modal ao clicar fora
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+
+            // Função para criar item
+            function createListItem(key) {
+                const li = document.createElement('li');
+                li.className = "apple-item group flex items-center rounded-lg p-2 cursor-move";
+                li.setAttribute('data-key', key);
+                const displayName = viewNames[key] || key;
+                li.innerHTML = `
+            <div class="drag-handle mr-2 cursor-grab touch-none p-0.5 rounded hover:bg-gray-100/50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 8h16M4 16h16" />
+                </svg>
+            </div>
+            <div class="flex-1">
+                <div class="apple-text-primary font-medium text-xs">${displayName}</div>
+            </div>
+            <button class="remove-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded hover:bg-red-100/50 text-red-500 hover:text-red-700" ${key === 'organizer' ? 'style="display: none;"' : ''}>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        `;
+                
+                // Adiciona evento de clique no botão de remover
+                const removeBtn = li.querySelector('.remove-btn');
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Previne o drag quando clica no botão
+                    removeItem(key);
+                });
+                
+                return li;
+            }
+
+            // Função que renderiza a lista baseado no array widgetOrder
+            function renderWidgetList(orderArray) {
+                list.innerHTML = '';
+                orderArray.forEach((key, index) => {
+                    const item = createListItem(key);
+                    item.style.animationDelay = `${index * 0.1}s`;
+                    item.classList.add('fade-in');
+                    list.appendChild(item);
+                });
+                // Inicializa SortableJS
+                new Sortable(list, {
+                    handle: '.drag-handle',
+                    animation: 300,
+                    ghostClass: 'dragging',
+                    dragClass: 'sortable-drag',
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    onEnd: function () {
+                        widgetOrder = Array.from(list.children).map(li => li.getAttribute('data-key'));
+                        console.log("Nova ordem:", widgetOrder);
+                    }
+                });
+            }
+
+            // Função para remover item
+            async function removeItem(key) {
+                // Proteção: não permite remover o organizador
+                if (key === 'organizer') {
+                    alert('Não é possível remover o organizador, pois ele é necessário para gerenciar as outras páginas.');
+                    return;
+                }
+                
+                if (confirm(`Tem certeza que deseja remover "${viewNames[key] || key}"?`)) {
+                    try {
+                        // Remove o widget da lista ativa
+                        const result = await ipcRenderer.invoke('remove-active-widget', key);
+                        
+                        if (result.success) {
+                            // Remove o item do array local
+                            widgetOrder = widgetOrder.filter(item => item !== key);
+                            
+                            // Re-renderiza a lista
+                            renderWidgetList(widgetOrder);
+                            
+                            // Recarrega a lista de páginas disponíveis
+                            await loadAvailablePages();
+                            
+                            console.log("Widget removido:", key);
+                            console.log("Nova ordem:", widgetOrder);
+                        } else {
+                            alert('Erro ao remover widget: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('Erro ao remover widget:', error);
+                        alert('Erro ao remover widget');
+                    }
+                }
+            }
+
+            // Função para atualizar a ordem das views
+            async function updateViewsOrder() {
+                try {
+                    // Envia a nova ordem para o processo principal
+                    const result = await ipcRenderer.invoke('reorder-views', widgetOrder);
+                    
+                    if (result.success) {
+                        // Mostra feedback visual de sucesso
+                        refreshButton.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Atualizado!
+                        `;
+                        refreshButton.classList.add('success-animation');
+                        refreshButton.style.background = 'linear-gradient(135deg, #34C759 0%, #30A46C 100%)';
+                        
+                        // Volta ao estado normal após 2 segundos
+                        setTimeout(() => {
+                            refreshButton.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Atualizar
+                            `;
+                            refreshButton.classList.remove('success-animation');
+                            refreshButton.style.background = '';
+                        }, 2000);
+                    } else {
+                        console.error('Erro ao reordenar views:', result.error);
+                        alert('Erro ao atualizar a ordem: ' + result.error);
+                    }
+                } catch (error) {
+                    console.error('Erro na comunicação IPC:', error);
+                    alert('Erro na comunicação com o processo principal');
+                }
+            }
+
+            // Inicializa a lista
+            renderWidgetList(widgetOrder);
+
+            // Carrega páginas disponíveis na inicialização
+            await loadAvailablePages();
+
+            // Botão Atualizar
+            refreshButton.addEventListener('click', updateViewsOrder);
+
+        });
+    </script>
+
+</body>
+
+</html>

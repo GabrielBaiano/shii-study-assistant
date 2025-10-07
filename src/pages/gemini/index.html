@@ -19,56 +19,58 @@
 </head>
 
 <body>
-  <div class="header">
-    <div class="header-title">
-      <div class="ai-icon">✨</div>
-      Gemini AI
-    </div>
-    <div class="api-key-container">
-      <input type="password" id="api-key" class="api-key-input" placeholder="Cole sua Google AI API Key">
-      <button type="button" id="toggle-api-key" class="api-key-toggle">👁</button>
-    </div>
-  </div>
-
-  <div class="chat-container" id="chat-container">
-    <div class="welcome-message">
-      <div class="ai-icon">✨</div>
-      <p>Bem-vindo ao Cursor AI Clone!</p>
-      <p>Insira sua Google AI API Key acima para começar.</p>
-      <p>Comandos disponíveis: <code>/clear</code></p>
-    </div>
-  </div>
-
-  <div class="input-container">
-    <div id="image-preview" class="image-preview" style="display: none;">
-      <img id="preview-img" src="" alt="Preview">
-      <div class="image-preview-info">
-        <div>Imagem selecionada</div>
-        <div id="image-size"></div>
+  <div class="gemini-container">
+    <div class="header">
+      <div class="header-title">
+        <div class="ai-icon">✨</div>
+        Gemini AI
       </div>
-      <button type="button" id="remove-image" class="remove-image">✕</button>
-    </div>
-    
-    <div id="command-info" class="command-info" style="display: none;">
-      Digite <strong>/clear</strong> para limpar o histórico
-    </div>
-
-    <div class="input-wrapper">
-      <textarea id="message-inpaut" class="message-input" placeholder="Digite sua mensagem... (Enter para enviar)" rows="1"></textarea>
-      <div class="input-actions">
-        <button type="button" id="image-button" class="action-button" title="Anexar imagem">📎</button>
-        <button type="button" id="send-button" class="send-button" disabled>
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
-          </svg>
-        </button>
+      <div class="api-key-container">
+        <input type="password" id="api-key" class="api-key-input" placeholder="Cole sua Google AI API Key">
+        <button type="button" id="toggle-api-key" class="api-key-toggle">👁</button>
       </div>
     </div>
-  </div>
 
-  <div class="status-bar">
-    <span id="message-count">0 mensagens</span>
-    <span id="api-status">API Key não configurada</span>
+    <div class="chat-container" id="chat-container">
+      <div class="welcome-message">
+        <div class="ai-icon">✨</div>
+        <p>Bem-vindo ao Cursor AI Clone!</p>
+        <p>Insira sua Google AI API Key acima para começar.</p>
+        <p>Comandos disponíveis: <code>/clear</code></p>
+      </div>
+    </div>
+
+    <div class="input-container">
+      <div id="image-preview" class="image-preview" style="display: none;">
+        <img id="preview-img" src="" alt="Preview">
+        <div class="image-preview-info">
+          <div>Imagem selecionada</div>
+          <div id="image-size"></div>
+        </div>
+        <button type="button" id="remove-image" class="remove-image">✕</button>
+      </div>
+      
+      <div id="command-info" class="command-info" style="display: none;">
+        Digite <strong>/clear</strong> para limpar o histórico
+      </div>
+
+      <div class="input-wrapper">
+        <textarea id="message-input" class="message-input" placeholder="Digite sua mensagem... (Enter para enviar)" rows="1"></textarea>
+        <div class="input-actions">
+          <button type="button" id="image-button" class="action-button" title="Anexar imagem">📎</button>
+          <button type="button" id="send-button" class="send-button" disabled>
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <span id="message-count">0 mensagens</span>
+      <span id="api-status">API Key não configurada</span>
+    </div>
   </div>
 
   <input type="file" id="file-input" accept="image/*" style="display: none;">

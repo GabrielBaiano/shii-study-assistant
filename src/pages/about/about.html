@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Profile Widget</title>
+    <style>
+        /* --- GERAL --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* * Configuração para Electron:
+         * - Fundo transparente para integrar com o app.
+         * - Ocupa a tela toda.
+         */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: transparent;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            /* Impede barras de rolagem */
+        }
+
+        /* --- WIDGET --- */
+        .profile-widget {
+            width: 100%;
+            /* Ocupa toda a largura disponível */
+            height: 100%;
+            /* Ocupa toda a altura disponível */
+            background-color: #26272B;
+            padding: 20px;
+            box-shadow:
+                10px 10px 20px rgba(18, 18, 18, 0.8),
+                -10px -10px 20px rgba(50, 50, 50, 0.6);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* Empurra o conteúdo para as extremidades */
+            border: 1px solid #3A3B3F;
+            border-radius: 16px;
+            /* Bordas arredondadas adicionadas */
+        }
+
+        /* --- CABEÇALHO DO PERFIL --- */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #3A3B3F;
+            object-fit: cover;
+        }
+
+        .profile-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            /* Aumentado para dar espaço para as estrelas */
+        }
+
+        .name {
+            color: #FFFFFF;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .bio {
+            color: #A0A2A8;
+            font-size: 0.9rem;
+        }
+
+        /* --- STATS (ESTRELAS) --- */
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats .star-icon {
+            color: #FFD700;
+            font-size: 1rem;
+            transform: translateY(-1px);
+            /* Alinhamento visual fino */
+        }
+
+        .stats-text {
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .forks-count {
+            color: #A0A2A8;
+            font-weight: 400;
+        }
+
+        /* --- BOTÕES DE AÇÃO --- */
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .action-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 55px;
+            background-color: #2F3034;
+            border-radius: 16px;
+            text-decoration: none;
+            /* Sombra para o efeito "para fora" (outset) */
+            box-shadow:
+                4px 4px 8px rgba(18, 18, 18, 0.6),
+                -4px -4px 8px rgba(58, 59, 63, 0.8);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-btn:active {
+            /* Sombra para o efeito "pressionado" (inset) */
+            box-shadow:
+                inset 4px 4px 8px rgba(18, 18, 18, 0.6),
+                inset -4px -4px 8px rgba(58, 59, 63, 0.8);
+            transform: translateY(0);
+        }
+
+        /* Estilo especial para o primeiro botão, como na referência */
+        .action-btn.active {
+            background-color: #E93D82;
+            /* Tom de rosa da referência */
+            box-shadow:
+                inset 4px 4px 8px rgba(165, 33, 85, 0.7),
+                inset -4px -4px 8px rgba(255, 107, 179, 0.7);
+        }
+
+        .action-btn svg {
+            width: 24px;
+            height: 24px;
+            fill: #E0E1E6;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="profile-widget">
+        <!-- Parte de cima: Avatar, Nome, Bio e Estrelas -->
+        <div class="profile-header">
+            <img id="avatar" src="https://placehold.co/60x60/26272B/FFFFFF?text=G" alt="Avatar" class="avatar">
+            <div class="profile-info">
+                <h1 id="name" class="name">Carregando...</h1>
+                <p id="bio" class="bio">...</p>
+                <div class="stats">
+                    <span class="star-icon">⭐</span>
+                    <p id="stats-text" class="stats-text">...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parte de baixo: Botões de Ação -->
+        <div class="actions">
+            <!-- Botão 1: GitHub -->
+            <a id="github-link" href="#" target="_blank" class="action-btn active">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+            </a>
+            <!-- Botão 2: Buy Me a Coffee -->
+            <a id="coffee-link" href="#" target="_blank" class="action-btn">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M19.5,8h-0.81c-0.45,0-0.86,0.24-1.08,0.63L16,12h3.5c1.38,0,2.5-1.12,2.5-2.5S20.88,8,19.5,8z M14,12l1.61-3.37 c0.22-0.39,0.01-0.89-0.44-0.89H6.83l-0.61-1.34C6.04,5.95,5.55,5.62,5,5.62H2.21C1.86,5.62,1.57,5.91,1.57,6.25S1.86,6.88,2.21,6.88H4.6l3.21,7.06c-0.35,0.27-0.57,0.69-0.57,1.16c0,0.83,0.67,1.5,1.5,1.5h8 c0.83,0,1.5-0.67,1.5-1.5c0-0.47-0.22-0.89-0.57-1.16L17.7,15H9.79l-0.51-1.12L14,12z" />
+                </svg>
+            </a>
+            <!-- Botão 3: Portfólio -->
+            <a id="portfolio-link" href="#" target="_blank" class="action-btn">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M10.59,13.41C11,13.8 11,14.44 10.59,14.83C10.2,15.22 9.56,15.22 9.17,14.83C7.22,12.88 7.22,9.71 9.17,7.76V7.76L12.71,4.22C14.66,2.27 17.83,2.27 19.78,4.22C21.73,6.17 21.73,9.34 19.78,11.29L18.29,12.78C18.3,11.96 18.17,11.14 17.89,10.36L18.36,9.88C19.54,8.71 19.54,6.81 18.36,5.64C17.19,4.46 15.29,4.46 14.12,5.64L10.59,9.17C9.41,10.34 9.41,12.24 10.59,13.41M14.83,9.17C14.44,8.78 13.8,8.78 13.41,9.17C11.46,11.12 11.46,14.29 13.41,16.24V16.24L11.29,18.36C9.34,20.31 6.17,20.31 4.22,18.36C2.27,16.41 2.27,13.24 4.22,11.29L5.71,9.8C5.7,10.62 5.83,11.44 6.11,12.22L5.64,12.71C4.46,13.88 4.46,15.78 5.64,16.96C6.81,18.14 8.71,18.14 9.88,16.96L13.41,13.41C14.59,12.24 14.59,10.34 14.83,9.17Z" />
+                </svg>
+            </a>
+            <!-- Botão 4: Twitter (X) -->
+            <a id="twitter-link" href="#" target="_blank" class="action-btn">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURAÇÃO ---
+        const GITHUB_USERNAME = "GabrielBaiano";
+        const REPO_NAME = "shii-study-assistant";
+
+        // Coloque seus links aqui!
+        const LINKS = {
+            github: "https://github.com/GabrielBaiano",
+            buyMeACoffee: "https://www.buymeacoffee.com/SEU_USER",
+            portfolio: "https://SEU_PORTFOLIO.com",
+            twitter: "https://twitter.com/SEU_USER"
+        };
+        // --- FIM DA CONFIGURAÇÃO ---
+
+        async function fetchGitHubData() {
+            const userApiUrl = `https://api.github.com/users/${GITHUB_USERNAME}`;
+            const repoApiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}`;
+
+            try {
+                const [userResponse, repoResponse] = await Promise.all([
+                    fetch(userApiUrl),
+                    fetch(repoApiUrl)
+                ]);
+
+                if (!userResponse.ok) {
+                    throw new Error(`Erro ao buscar usuário: ${userResponse.statusText}`);
+                }
+                if (!repoResponse.ok) {
+                    throw new Error(`Erro ao buscar repositório: ${repoResponse.statusText}`);
+                }
+
+                const userData = await userResponse.json();
+                const repoData = await repoResponse.json();
+
+                updateWidget(userData, repoData);
+
+            } catch (error) {
+                console.error("Erro:", error);
+                document.getElementById('name').textContent = "Erro ao carregar";
+                document.getElementById('bio').textContent = "Verifique a configuração e o console.";
+            }
+        }
+
+        function updateWidget(userData, repoData) {
+            document.getElementById('avatar').src = userData.avatar_url;
+            document.getElementById('name').textContent = userData.name || userData.login;
+            document.getElementById('bio').textContent = userData.bio || 'Sem bio no GitHub.';
+
+            // Elementos das estrelas e forks
+            const statsElement = document.getElementById('stats-text');
+            statsElement.innerHTML = `${repoData.stargazers_count} <span class="forks-count">(${repoData.forks_count} Forks)</span>`;
+
+
+            document.getElementById('github-link').href = LINKS.github;
+            document.getElementById('coffee-link').href = LINKS.buyMeACoffee;
+            document.getElementById('portfolio-link').href = LINKS.portfolio;
+            document.getElementById('twitter-link').href = LINKS.twitter;
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchGitHubData);
+    </script>
+</body>
+
+</html>

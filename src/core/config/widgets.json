@@ -1,0 +1,58 @@
+{
+  "clock": {
+    "url": "file://src/pages/clock/clock.html",
+    "height": 312,
+    "visible": true,
+    "view": null
+  },
+  "pomodoro": {
+    "url": "file://src/pages/pomodoro/index.html",
+    "height": 350,
+    "visible": true,
+    "view": null
+  },
+  "gemini": {
+    "url": "file://src/pages/gemini/index.html",
+    "height": 800,
+    "visible": true,
+    "view": null
+  },
+  "stealth": {
+    "url": "file://src/pages/stealth/stealth.html",
+    "height": 40,
+    "visible": true,
+    "view": null,
+    "webPreferences": {
+      "nodeIntegration": true,
+      "contextIsolation": false
+    }
+  },
+  "organizer": {
+    "url": "file://src/pages/organizer/organizer.html",
+    "height": 360,
+    "visible": true,
+    "view": null,
+    "webPreferences": {
+      "nodeIntegration": true,
+      "contextIsolation": false
+    }
+  },
+  "settings": {
+    "url": "file://src/pages/settings/index.html",
+    "height": 400,
+    "visible": true,
+    "view": null
+  },
+  "placeholder": {
+    "url": "file://src/pages/placeholder/index.html",
+    "height": 200,
+    "visible": false,
+    "view": null
+  },
+  "about": {
+    "url": "file://src/pages/about/about.html",
+    "height": 300,
+    "visible": false,
+    "view": null
+  }
+}

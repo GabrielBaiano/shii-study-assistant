@@ -1,0 +1,26 @@
+{
+  "shortcuts": {
+    "scrollUp": "Up",
+    "scrollDown": "Down",
+    "pageUp": "PageUp",
+    "pageDown": "PageDown",
+    "scrollToTop": "Home",
+    "scrollToBottom": "End",
+    "toggleStealth": "F1",
+    "toggleAlwaysOnTop": "CommandOrControl+Alt+T",
+    "minimizeWindow": "CommandOrControl+Alt+M"
+  },
+  "viewSettings": {
+    "defaultWidth": 1200,
+    "alwaysOnTop": true,
+    "stealthMode": {
+      "enabled": true,
+      "autoStart": true
+    }
+  },
+  "layout": {
+    "gap": 20,
+    "topGap": 10,
+    "minHeight": 50
+  }
+}
