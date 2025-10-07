@@ -501,7 +501,11 @@ function pageDown() {
 function registerScrollShortcuts() {
   console.log('⌨️ Registering scroll shortcuts...');
   
-  const shortcuts = ADVANCED_SETTINGS.shortcuts || {};
+  try {
+    // Unregister all existing shortcuts first
+    globalShortcut.unregisterAll();
+    
+    const shortcuts = ADVANCED_SETTINGS.shortcuts || {};
   
   // Scroll up/down
   const scrollUpKey = shortcuts.scrollUp || 'Up';
@@ -587,7 +591,10 @@ function registerScrollShortcuts() {
     }
   });
   
-  console.log('✅ All shortcuts registered');
+    console.log('✅ All shortcuts registered');
+  } catch (error) {
+    console.error('❌ Error registering shortcuts:', error);
+  }
 }
 
 // -------------------------------------------
@@ -1169,10 +1176,34 @@ function createTray() {
   console.log('🔧 Creating system tray...');
   
   // Use the smallest icon from the build folder
-  const iconPath = path.join(__dirname, '..', '..', 'build', 'icon-16.png');
+  let iconPath;
+  if (app.isPackaged) {
+    // In production, use the icon from extraResources
+    iconPath = path.join(process.resourcesPath, 'build', 'icon-16.png');
+  } else {
+    // In development, use the icon from build folder
+    iconPath = path.join(__dirname, '..', '..', 'build', 'icon-16.png');
+  }
   
   // Create tray with icon
-  tray = new Tray(iconPath);
+  try {
+    tray = new Tray(iconPath);
+    console.log('✅ System tray created successfully');
+  } catch (error) {
+    console.error('❌ Error creating system tray:', error);
+    console.log('🔧 Trying with fallback icon...');
+    // Fallback to a different icon if the main one fails
+    const fallbackIconPath = app.isPackaged 
+      ? path.join(process.resourcesPath, 'build', 'icon.png')
+      : path.join(__dirname, '..', '..', 'build', 'icon.png');
+    try {
+      tray = new Tray(fallbackIconPath);
+      console.log('✅ System tray created with fallback icon');
+    } catch (fallbackError) {
+      console.error('❌ Failed to create tray with fallback icon:', fallbackError);
+      return;
+    }
+  }
   
   // Create context menu
   const contextMenu = Menu.buildFromTemplate([

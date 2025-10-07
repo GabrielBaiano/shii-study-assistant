@@ -112,6 +112,11 @@
         "from": "src/pages",
         "to": "src/pages",
         "filter": ["**/*"]
+      },
+      {
+        "from": "build",
+        "to": "build",
+        "filter": ["**/*"]
       }
     ]
   },
