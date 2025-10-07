@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const AutoLaunch = require("auto-launch");
 
+
 // Importar o plugin nativo para stealth
 let stealthManager;
 try {
@@ -43,10 +44,10 @@ const pageScrollStep = 300; // Pixels to scroll for page up/down
 // App configuration
 const APP_CONFIG = {
   name: "Shii!",
-  version: "1.1.0",
+  version: "2.0.0",
   window: {
     width: 400,
-  alwaysOnTop: true,
+    alwaysOnTop: true,
     frame: false,
     resizable: false,
     skipTaskbar: true
@@ -366,7 +367,7 @@ function createWidgetView(widgetKey, widgetConfig) {
           nodeIntegration: false,
           contextIsolation: true,
       transparent: true,  // Fundo transparente
-      backgroundThrottling: false
+      backgroundThrottling: false,
     };
     
     // Adiciona webPreferences específicas se existirem
@@ -383,6 +384,7 @@ function createWidgetView(widgetKey, widgetConfig) {
     if (widgetConfig.url) {
       try {
         console.log(`📂 Loading URL for "${widgetKey}": ${widgetConfig.url}`);
+        
         
         // Sempre usa loadURL para arquivos locais
         view.webContents.loadURL(widgetConfig.url);
@@ -1224,14 +1226,13 @@ function createTray() {
       checked: false,
       id: 'auto-start-status',
       click: async () => {
-        const { ipcRenderer } = require('electron');
         try {
           // Get current status
-          const currentStatus = await ipcRenderer.invoke('get-auto-start-status');
-          const newAction = currentStatus.enabled ? 'disable' : 'enable';
+          const currentStatus = await isAutoStartEnabled();
+          const newAction = currentStatus ? 'disable' : 'enable';
           
           // Toggle auto-start
-          const result = await ipcRenderer.invoke('toggle-auto-start', newAction);
+          const result = newAction === 'enable' ? await enableAutoStart() : await disableAutoStart();
           
           if (result.success) {
             // Update tray menu
@@ -1293,14 +1294,13 @@ function updateTrayStealthStatus() {
         checked: false,
         id: 'auto-start-status',
         click: async () => {
-          const { ipcRenderer } = require('electron');
           try {
             // Get current status
-            const currentStatus = await ipcRenderer.invoke('get-auto-start-status');
-            const newAction = currentStatus.enabled ? 'disable' : 'enable';
+            const currentStatus = await isAutoStartEnabled();
+            const newAction = currentStatus ? 'disable' : 'enable';
             
             // Toggle auto-start
-            const result = await ipcRenderer.invoke('toggle-auto-start', newAction);
+            const result = newAction === 'enable' ? await enableAutoStart() : await disableAutoStart();
             
             if (result.success) {
               // Update tray menu
@@ -1347,14 +1347,13 @@ async function updateTrayAutoStartStatus() {
           checked: enabled,
           id: 'auto-start-status',
           click: async () => {
-            const { ipcRenderer } = require('electron');
             try {
               // Get current status
-              const currentStatus = await ipcRenderer.invoke('get-auto-start-status');
-              const newAction = currentStatus.enabled ? 'disable' : 'enable';
+              const currentStatus = await isAutoStartEnabled();
+              const newAction = currentStatus ? 'disable' : 'enable';
               
               // Toggle auto-start
-              const result = await ipcRenderer.invoke('toggle-auto-start', newAction);
+              const result = newAction === 'enable' ? await enableAutoStart() : await disableAutoStart();
               
               if (result.success) {
                 // Update tray menu
@@ -1382,6 +1381,22 @@ async function updateTrayAutoStartStatus() {
 }
 
 // -------------------------------------------
+// PROCESS CONFIGURATION
+// -------------------------------------------
+// Configure process name and identification
+function configureProcessIdentity() {
+  try {
+    // Set process title for better identification in Task Manager
+    process.title = `Stealth Widget App v${APP_CONFIG.version}`;
+    
+    console.log(`🏷️ Process configured: ${process.title}`);
+    console.log(`📋 Process ID: ${process.pid}`);
+  } catch (error) {
+    console.error('❌ Error configuring process identity:', error.message);
+  }
+}
+
+// -------------------------------------------
 // APP EVENTS
 // -------------------------------------------
 // App event handlers
@@ -1389,6 +1404,9 @@ app.whenReady().then(() => {
   console.log('🚀 App is ready, starting initialization...');
   console.log('📦 App is packaged:', app.isPackaged);
   console.log('📂 Resources path:', process.resourcesPath);
+  
+  // Configure process identity first
+  configureProcessIdentity();
   
   // Load advanced settings first
   ADVANCED_SETTINGS = loadAdvancedSettings();

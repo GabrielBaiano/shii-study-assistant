@@ -75,13 +75,15 @@
           ]
         }
       ],
-      "icon": "build/icon-256.png",
+      "icon": "build/icon.ico",
       "forceCodeSigning": false,
       "signAndEditExecutable": false,
       "signExts": "",
       "artifactName": "Shii!-${version}-${arch}",
       "requestedExecutionLevel": "asInvoker",
-      "verifyUpdateCodeSignature": false
+      "verifyUpdateCodeSignature": false,
+      "executableName": "Shii!",
+      "legalTrademarks": "Shii! is a trademark of GabrielBaiano"
     },
     "nsis": {
       "oneClick": false,
@@ -90,11 +92,13 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Shii!",
+      "shortcutName": "Shii! - Stealth Widget App",
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico",
-      "artifactName": "Shii!-Setup-${version}.exe"
+      "artifactName": "Shii!-Setup-${version}.exe",
+      "displayLanguageSelector": false,
+      "language": "1033"
     },
     "portable": {
       "artifactName": "Shii!-Portable-${version}.exe"
@@ -111,12 +115,16 @@
       {
         "from": "src/pages",
         "to": "src/pages",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "build",
         "to": "build",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ]
   },
