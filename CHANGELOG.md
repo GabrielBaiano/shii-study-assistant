@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.0] - 2024-12-29
+
+### Added
+- **Auto-Start with Windows**: Complete auto-start functionality with tray control
+- **Simplified System Tray**: Clean tray menu with only essential functions
+- **Enhanced App Termination**: Proper cleanup and force quit functionality
+- **Build Resource Management**: HTML pages now properly included in builds
+- **Project Restructuring**: Reorganized from `src/main` to `src/core` for better clarity
+
+### Improved
+- **System Tray UX**: Streamlined menu with stealth status toggle and quit option
+- **App Architecture**: Better file organization and removed unused components
+- **Build Process**: Fixed resource inclusion for production builds
+- **Code Quality**: Removed test dependencies and unused files
+- **Page Interaction**: Disabled dragging on pages for better user experience
+
+### Removed
+- **Unused Dependencies**: Removed vitest and testing-related packages
+- **Empty Directories**: Cleaned up unused `src/components` and `src/settings` folders
+- **Banner System**: Removed unused banner functionality
+- **Test Files**: Removed all test-related files and configurations
+- **Redundant Files**: Cleaned up duplicate and unused HTML files
+
+### Fixed
+- **Build Issues**: Fixed missing HTML pages in production builds
+- **App Quit**: Resolved incomplete app termination from system tray
+- **Resource Management**: Proper cleanup of webContents and native modules
+- **File Organization**: Corrected path references after folder restructuring
+- **Page Dragging**: Disabled unwanted page dragging behavior
+
+### Technical Details
+- Updated `package.json` with `extraResources` configuration
+- Implemented `forceQuit()` function for complete app termination
+- Added auto-launch functionality with `auto-launch` package
+- Reorganized project structure for better maintainability
+- Enhanced error handling and logging throughout the application
+
 ## [1.1.0] - 2024-12-29
 
 ### Added
