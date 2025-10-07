@@ -17,8 +17,6 @@
   <a href="https://github.com/GabrielBaiano/stelthapp_test" target="_blank">📚 Original Version</a>
   &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
   <a href="https://github.com/GabrielBaiano/shii-study-assistant/issues/new?title=Suggestion%20or%20Bug%20in%20Shii!&body=**Describe%20your%20idea%20or%20problem%20here:**%0A%0A%0A**Steps%20to%20reproduce%20(if%20it's%20a%20bug):**%0A1.%20...%0A2.%20...%0A%0A**Any%20other%20relevant%20information?**%0A" target="_blank">🐛 Report Bug</a>
-  &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
-  <a href="https://www.linkedin.com/in/gabriel-nascimento-gama-5b0b30185/" target="_blank">💼 LinkedIn</a>
 </p>
 
 <p align="center">
