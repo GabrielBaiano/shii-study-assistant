@@ -1,8 +1,16 @@
-const { app, BrowserWindow, screen, WebContentsView, BrowserView, globalShortcut, Tray, Menu } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  screen,
+  WebContentsView,
+  BrowserView,
+  globalShortcut,
+  Tray,
+  Menu,
+} = require("electron");
 const path = require("path");
 const fs = require("fs");
 const AutoLaunch = require("auto-launch");
-
 
 // Importar o plugin nativo para stealth
 let stealthManager;
@@ -23,7 +31,7 @@ let viewsConfig = {};
 let viewsLayout = [];
 
 // Global widgets control - defines which widgets are loaded
-let ACTIVE_WIDGETS = ['organizer', 'clock', 'gemini']; // Default values
+let ACTIVE_WIDGETS = ["organizer", "clock", "gemini"]; // Default values
 
 // Global advanced settings
 let ADVANCED_SETTINGS = {};
@@ -50,15 +58,15 @@ const APP_CONFIG = {
     alwaysOnTop: true,
     frame: false,
     resizable: false,
-    skipTaskbar: true
-  }
+    skipTaskbar: true,
+  },
 };
 
 // Layout constants
 const LAYOUT_CONFIG = {
-  topGap: 10,    // Gap from top
-  gap: 20,       // Gap between widgets
-  minHeight: 50  // Minimum height for widgets
+  topGap: 10, // Gap from top
+  gap: 20, // Gap between widgets
+  minHeight: 50, // Minimum height for widgets
 };
 
 // -------------------------------------------
@@ -69,22 +77,22 @@ const LAYOUT_CONFIG = {
 function loadSettings() {
   try {
     const settingsPath = path.join(__dirname, "config", "settings.json");
-    const settingsData = fs.readFileSync(settingsPath, 'utf8');
+    const settingsData = fs.readFileSync(settingsPath, "utf8");
     const settings = JSON.parse(settingsData);
-    
-    console.log('📋 Settings loaded:', settings);
+
+    console.log("📋 Settings loaded:", settings);
     return settings;
   } catch (error) {
-    console.error('❌ Error loading settings:', error.message);
+    console.error("❌ Error loading settings:", error.message);
     // Return default settings if file doesn't exist
     return {
-      activeWidgets: ['organizer', 'clock', 'gemini'],
+      activeWidgets: ["organizer", "clock", "gemini"],
       window: {
         frame: false,
         skipTaskbar: true,
         resizable: true,
-        alwaysOnTop: true
-      }
+        alwaysOnTop: true,
+      },
     };
   }
 }
@@ -94,10 +102,10 @@ function saveSettings(settings) {
   try {
     const settingsPath = path.join(__dirname, "config", "settings.json");
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-    console.log('💾 Settings saved:', settings);
+    console.log("💾 Settings saved:", settings);
     return true;
   } catch (error) {
-    console.error('❌ Error saving settings:', error.message);
+    console.error("❌ Error saving settings:", error.message);
     return false;
   }
 }
@@ -105,30 +113,34 @@ function saveSettings(settings) {
 // Update active widgets in settings
 function updateActiveWidgets(newActiveWidgets) {
   ACTIVE_WIDGETS = newActiveWidgets;
-  
+
   // Load current settings
   const settings = loadSettings();
-  
+
   // Update activeWidgets
   settings.activeWidgets = newActiveWidgets;
-  
+
   // Save updated settings
   saveSettings(settings);
-  
-  console.log('✅ Active widgets updated:', newActiveWidgets);
+
+  console.log("✅ Active widgets updated:", newActiveWidgets);
 }
 
 // Load advanced settings from file
 function loadAdvancedSettings() {
   try {
-    const advancedSettingsPath = path.join(__dirname, "config", "advanced-settings.json");
-    const advancedSettingsData = fs.readFileSync(advancedSettingsPath, 'utf8');
+    const advancedSettingsPath = path.join(
+      __dirname,
+      "config",
+      "advanced-settings.json"
+    );
+    const advancedSettingsData = fs.readFileSync(advancedSettingsPath, "utf8");
     const advancedSettings = JSON.parse(advancedSettingsData);
-    
-    console.log('⚙️ Advanced settings loaded:', advancedSettings);
+
+    console.log("⚙️ Advanced settings loaded:", advancedSettings);
     return advancedSettings;
   } catch (error) {
-    console.error('❌ Error loading advanced settings:', error.message);
+    console.error("❌ Error loading advanced settings:", error.message);
     // Return default advanced settings if file doesn't exist
     return {
       shortcuts: {
@@ -140,21 +152,21 @@ function loadAdvancedSettings() {
         scrollToBottom: "End",
         toggleStealth: "F1",
         nextWidget: "ArrowRight",
-        previousWidget: "ArrowLeft"
+        previousWidget: "ArrowLeft",
       },
       viewSettings: {
         defaultWidth: 1200,
         alwaysOnTop: true,
         stealthMode: {
           enabled: true,
-          autoStart: true
-        }
+          autoStart: true,
+        },
       },
       layout: {
         gap: 20,
         topGap: 10,
-        minHeight: 50
-      }
+        minHeight: 50,
+      },
     };
   }
 }
@@ -162,12 +174,20 @@ function loadAdvancedSettings() {
 // Save advanced settings to file
 function saveAdvancedSettings(advancedSettings) {
   try {
-    const advancedSettingsPath = path.join(__dirname, "config", "advanced-settings.json");
-    fs.writeFileSync(advancedSettingsPath, JSON.stringify(advancedSettings, null, 2), 'utf8');
-    console.log('✅ Advanced settings saved:', advancedSettings);
+    const advancedSettingsPath = path.join(
+      __dirname,
+      "config",
+      "advanced-settings.json"
+    );
+    fs.writeFileSync(
+      advancedSettingsPath,
+      JSON.stringify(advancedSettings, null, 2),
+      "utf8"
+    );
+    console.log("✅ Advanced settings saved:", advancedSettings);
     return true;
   } catch (error) {
-    console.error('❌ Error saving advanced settings:', error.message);
+    console.error("❌ Error saving advanced settings:", error.message);
     return false;
   }
 }
@@ -184,36 +204,39 @@ function applyStealthToViews() {
   }
 
   console.log("🕵️ Aplicando stealth nas WebContentsView...");
-  
+
   let successCount = 0;
-  
+
   // Aplicar stealth em todas as views ativas
   Object.entries(viewsConfig).forEach(([key, config]) => {
     if (config.view && config.view.webContents) {
       try {
         const webContents = config.view.webContents;
-        
+
         // Obter o título da janela da WebContentsView
         const windowTitle = `WebContentsView-${key}`;
-        
+
         // Para BrowserView, precisamos obter o handle da janela principal
         // e aplicar stealth nela, já que BrowserView não tem janela própria
         if (config.view.webContents.id) {
           console.log(`🔍 Aplicando stealth na BrowserView: ${key}`);
-          
+
           // Para BrowserView, aplicamos stealth na janela principal
           const mainWindowTitle = mainWindow.getTitle() || "Stealth App";
           const result = stealthManager.applyStealthByTitle(mainWindowTitle);
-          
+
           if (result) {
             successCount++;
             console.log(`✅ Stealth aplicado na BrowserView: ${key}`);
-    } else {
+          } else {
             console.log(`❌ Falha ao aplicar stealth na BrowserView: ${key}`);
           }
         }
       } catch (error) {
-        console.error(`❌ Erro ao aplicar stealth na view "${key}":`, error.message);
+        console.error(
+          `❌ Erro ao aplicar stealth na view "${key}":`,
+          error.message
+        );
       }
     }
   });
@@ -230,7 +253,7 @@ function removeStealthFromViews() {
   }
 
   console.log("👁️ Removendo stealth das WebContentsView...");
-  
+
   try {
     // Remover stealth de todas as janelas gerenciadas pelo stealthManager
     const result = stealthManager.removeStealthFromMultipleWindows();
@@ -250,7 +273,7 @@ function getAppPath(relativePath) {
   if (app.isPackaged) {
     // In packaged app
     return path.join(process.resourcesPath, relativePath);
-    } else {
+  } else {
     // In development
     return path.join(__dirname, "..", "..", relativePath);
   }
@@ -259,11 +282,11 @@ function getAppPath(relativePath) {
 // Initialize auto-launcher
 function initializeAutoLauncher() {
   autoLauncher = new AutoLaunch({
-    name: 'Stealth Widget App',
+    name: "Stealth Widget App",
     path: process.execPath,
-    isHidden: true
+    isHidden: true,
   });
-  console.log('🚀 Auto-launcher inicializado');
+  console.log("🚀 Auto-launcher inicializado");
 }
 
 // Enable auto-start with Windows
@@ -271,10 +294,10 @@ async function enableAutoStart() {
   try {
     if (!autoLauncher) initializeAutoLauncher();
     await autoLauncher.enable();
-    console.log('✅ Auto-start habilitado');
-    return { success: true, message: 'Auto-start habilitado com sucesso' };
+    console.log("✅ Auto-start habilitado");
+    return { success: true, message: "Auto-start habilitado com sucesso" };
   } catch (error) {
-    console.error('❌ Erro ao habilitar auto-start:', error);
+    console.error("❌ Erro ao habilitar auto-start:", error);
     return { success: false, error: error.message };
   }
 }
@@ -284,10 +307,10 @@ async function disableAutoStart() {
   try {
     if (!autoLauncher) initializeAutoLauncher();
     await autoLauncher.disable();
-    console.log('❌ Auto-start desabilitado');
-    return { success: true, message: 'Auto-start desabilitado com sucesso' };
+    console.log("❌ Auto-start desabilitado");
+    return { success: true, message: "Auto-start desabilitado com sucesso" };
   } catch (error) {
-    console.error('❌ Erro ao desabilitar auto-start:', error);
+    console.error("❌ Erro ao desabilitar auto-start:", error);
     return { success: false, error: error.message };
   }
 }
@@ -297,10 +320,12 @@ async function isAutoStartEnabled() {
   try {
     if (!autoLauncher) initializeAutoLauncher();
     const enabled = await autoLauncher.isEnabled();
-    console.log(`🔍 Auto-start status: ${enabled ? 'habilitado' : 'desabilitado'}`);
+    console.log(
+      `🔍 Auto-start status: ${enabled ? "habilitado" : "desabilitado"}`
+    );
     return enabled;
   } catch (error) {
-    console.error('❌ Erro ao verificar status do auto-start:', error);
+    console.error("❌ Erro ao verificar status do auto-start:", error);
     return false;
   }
 }
@@ -312,39 +337,39 @@ async function isAutoStartEnabled() {
 function loadAllWidgetsConfig() {
   try {
     const widgetsPath = path.join(__dirname, "config", "widgets.json");
-    const widgetsData = fs.readFileSync(widgetsPath, 'utf8');
+    const widgetsData = fs.readFileSync(widgetsPath, "utf8");
     const allWidgets = JSON.parse(widgetsData);
-    
+
     // Process URLs to use absolute paths
-    Object.keys(allWidgets).forEach(key => {
+    Object.keys(allWidgets).forEach((key) => {
       const widget = allWidgets[key];
       if (widget.url && widget.url.startsWith("file://src/")) {
         const relativePath = widget.url.replace("file://src/", "src/");
         widget.url = "file://" + getAppPath(relativePath);
       }
     });
-    
-    console.log('📋 All widgets loaded:', Object.keys(allWidgets));
+
+    console.log("📋 All widgets loaded:", Object.keys(allWidgets));
     return allWidgets;
-        } catch (error) {
-    console.error('❌ Error loading widgets config:', error.message);
-  return {};
+  } catch (error) {
+    console.error("❌ Error loading widgets config:", error.message);
+    return {};
   }
 }
 
 // Load widgets configuration (filtered by ACTIVE_WIDGETS)
 function loadWidgetsConfig() {
   const allWidgets = loadAllWidgetsConfig();
-  
+
   // Filter only active widgets based on ACTIVE_WIDGETS
   const filteredWidgets = {};
-  ACTIVE_WIDGETS.forEach(key => {
+  ACTIVE_WIDGETS.forEach((key) => {
     if (allWidgets[key]) {
       filteredWidgets[key] = allWidgets[key];
     }
   });
-  
-  console.log('📋 Active widgets loaded:', Object.keys(filteredWidgets));
+
+  console.log("📋 Active widgets loaded:", Object.keys(filteredWidgets));
   return filteredWidgets;
 }
 
@@ -362,38 +387,43 @@ function resolveHeightPx(cfg, winHeight, fallback = 100) {
 // Create BrowserView for a widget (unified for both static and dynamic)
 function createWidgetView(widgetKey, widgetConfig) {
   try {
-    console.log(`🔧 Creating BrowserView for widget "${widgetKey}" with config:`, widgetConfig);
-    
+    console.log(
+      `🔧 Creating BrowserView for widget "${widgetKey}" with config:`,
+      widgetConfig
+    );
+
     // Configuração básica de webPreferences
     const webPreferences = {
-          nodeIntegration: false,
-          contextIsolation: true,
-      transparent: true,  // Fundo transparente
+      nodeIntegration: false,
+      contextIsolation: true,
+      transparent: true, // Fundo transparente
       backgroundThrottling: false,
     };
-    
+
     // Adiciona webPreferences específicas se existirem
     if (widgetConfig.webPreferences) {
       Object.assign(webPreferences, widgetConfig.webPreferences);
     }
 
     console.log(`🔧 WebPreferences for "${widgetKey}":`, webPreferences);
-    
+
     const view = new BrowserView({ webPreferences });
     console.log(`✅ BrowserView created for "${widgetKey}":`, view);
-    
+
     // Load the widget content
     if (widgetConfig.url) {
       try {
         console.log(`📂 Loading URL for "${widgetKey}": ${widgetConfig.url}`);
-        
-        
+
         // Sempre usa loadURL para arquivos locais
         view.webContents.loadURL(widgetConfig.url);
-        
+
         console.log(`📱 Widget "${widgetKey}" loaded: ${widgetConfig.url}`);
       } catch (loadError) {
-        console.error(`❌ Error loading widget "${widgetKey}":`, loadError.message);
+        console.error(
+          `❌ Error loading widget "${widgetKey}":`,
+          loadError.message
+        );
         console.error(`❌ Full error:`, loadError);
         return null;
       }
@@ -401,15 +431,17 @@ function createWidgetView(widgetKey, widgetConfig) {
       console.error(`❌ No URL provided for widget "${widgetKey}"`);
       return null;
     }
-    
+
     return view;
   } catch (error) {
-    console.error(`❌ Error creating BrowserView for "${widgetKey}":`, error.message);
+    console.error(
+      `❌ Error creating BrowserView for "${widgetKey}":`,
+      error.message
+    );
     console.error(`❌ Full error:`, error);
     return null;
   }
 }
-
 
 // -------------------------------------------
 // LAYOUT FUNCTIONS
@@ -417,14 +449,14 @@ function createWidgetView(widgetKey, widgetConfig) {
 // Layout views function
 function layoutViews() {
   if (!mainWindow) return;
-  
+
   const [winWidth, winHeight] = mainWindow.getSize();
   const { topGap, gap } = LAYOUT_CONFIG;
 
   let cursorY = topGap;
   viewsLayout = []; // Reset: clear old positions
 
-  console.log('🔄 Laying out widgets...');
+  console.log("🔄 Laying out widgets...");
 
   Object.entries(viewsConfig).forEach(([key, cfg]) => {
     const v = cfg.view;
@@ -455,12 +487,17 @@ function layoutViews() {
 
   // Calculate max scroll offset
   const totalContentHeight = cursorY;
-  maxScrollOffset = Math.max(0, totalContentHeight - winHeight + LAYOUT_CONFIG.topGap);
-  
+  maxScrollOffset = Math.max(
+    0,
+    totalContentHeight - winHeight + LAYOUT_CONFIG.topGap
+  );
+
   // Clamp scroll offset to valid range
   scrollOffset = Math.max(0, Math.min(scrollOffset, maxScrollOffset));
 
-  console.log(`✅ Layout complete. Total height: ${cursorY}px, Scroll offset: ${scrollOffset}px`);
+  console.log(
+    `✅ Layout complete. Total height: ${cursorY}px, Scroll offset: ${scrollOffset}px`
+  );
 }
 
 // -------------------------------------------
@@ -501,43 +538,48 @@ function pageDown() {
 // Scroll to next widget (horizontal navigation)
 function scrollToNextWidget() {
   if (!mainWindow || viewsLayout.length === 0) return;
-  
+
   const [winWidth, winHeight] = mainWindow.getSize();
   const windowTop = scrollOffset;
   const windowBottom = scrollOffset + winHeight;
-  
+
   console.log(`🔄 Scrolling to next widget. Current offset: ${scrollOffset}px`);
   console.log(`📏 Window bounds: top=${windowTop}px, bottom=${windowBottom}px`);
-  
+
   // Find the next widget that is not fully visible or not visible at all
   let targetWidget = null;
-  
+
   for (let i = 0; i < viewsLayout.length; i++) {
     const widget = viewsLayout[i];
     const widgetTop = widget.y;
     const widgetBottom = widget.y + widget.height;
-    
+
     // Check if widget is below current viewport
     if (widgetTop >= windowBottom) {
       targetWidget = widget;
       break;
     }
-    
+
     // Check if widget is partially visible at the bottom
     if (widgetTop < windowBottom && widgetBottom > windowBottom) {
       targetWidget = widget;
       break;
     }
   }
-  
+
   if (targetWidget) {
     // Calculate new scroll offset to position widget with half gap at bottom
     // Position the widget so there's half the gap between its bottom and window bottom
     const halfGap = LAYOUT_CONFIG.gap / 2;
-    const newOffset = Math.max(0, targetWidget.y + targetWidget.height - winHeight + halfGap);
+    const newOffset = Math.max(
+      0,
+      targetWidget.y + targetWidget.height - winHeight + halfGap
+    );
     scrollOffset = Math.min(newOffset, maxScrollOffset);
     layoutViews();
-    console.log(`⬇️ Scrolled to next widget "${targetWidget.key}" at offset ${scrollOffset}px (positioned with ${halfGap}px gap at bottom)`);
+    console.log(
+      `⬇️ Scrolled to next widget "${targetWidget.key}" at offset ${scrollOffset}px (positioned with ${halfGap}px gap at bottom)`
+    );
   } else {
     // If no next widget found, scroll to bottom
     scrollToBottom();
@@ -548,42 +590,46 @@ function scrollToNextWidget() {
 // Scroll to previous widget (horizontal navigation)
 function scrollToPreviousWidget() {
   if (!mainWindow || viewsLayout.length === 0) return;
-  
+
   const [winWidth, winHeight] = mainWindow.getSize();
   const windowTop = scrollOffset;
   const windowBottom = scrollOffset + winHeight;
-  
-  console.log(`🔄 Scrolling to previous widget. Current offset: ${scrollOffset}px`);
+
+  console.log(
+    `🔄 Scrolling to previous widget. Current offset: ${scrollOffset}px`
+  );
   console.log(`📏 Window bounds: top=${windowTop}px, bottom=${windowBottom}px`);
-  
+
   // Find the previous widget that is not fully visible or not visible at all
   let targetWidget = null;
-  
+
   // Search from bottom to top
   for (let i = viewsLayout.length - 1; i >= 0; i--) {
     const widget = viewsLayout[i];
     const widgetTop = widget.y;
     const widgetBottom = widget.y + widget.height;
-    
+
     // Check if widget is above current viewport
     if (widgetBottom <= windowTop) {
       targetWidget = widget;
       break;
     }
-    
+
     // Check if widget is partially visible at the top
     if (widgetTop < windowTop && widgetBottom > windowTop) {
       targetWidget = widget;
       break;
     }
   }
-  
+
   if (targetWidget) {
     // Calculate new scroll offset to make the widget fully visible at the top
     const newOffset = Math.max(0, targetWidget.y - LAYOUT_CONFIG.topGap);
     scrollOffset = Math.min(newOffset, maxScrollOffset);
     layoutViews();
-    console.log(`⬆️ Scrolled to previous widget "${targetWidget.key}" at offset ${scrollOffset}px`);
+    console.log(
+      `⬆️ Scrolled to previous widget "${targetWidget.key}" at offset ${scrollOffset}px`
+    );
   } else {
     // If no previous widget found, scroll to top
     scrollToTop();
@@ -596,112 +642,117 @@ function scrollToPreviousWidget() {
 // -------------------------------------------
 // Register keyboard shortcuts for scrolling
 function registerScrollShortcuts() {
-  console.log('⌨️ Registering scroll shortcuts...');
-  
+  console.log("⌨️ Registering scroll shortcuts...");
+
   try {
     // Unregister all existing shortcuts first
     globalShortcut.unregisterAll();
-    
+
     const shortcuts = ADVANCED_SETTINGS.shortcuts || {};
-  
-  // Scroll up/down
-  const scrollUpKey = shortcuts.scrollUp || 'Up';
-  globalShortcut.register(`CommandOrControl+Alt+${scrollUpKey}`, () => {
-    scrollUp();
-  });
-  
-  const scrollDownKey = shortcuts.scrollDown || 'Down';
-  globalShortcut.register(`CommandOrControl+Alt+${scrollDownKey}`, () => {
-    scrollDown();
-  });
-  
-  // Page up/down
-  const pageUpKey = shortcuts.pageUp || 'PageUp';
-  globalShortcut.register(`CommandOrControl+Alt+${pageUpKey}`, () => {
-    pageUp();
-  });
-  
-  const pageDownKey = shortcuts.pageDown || 'PageDown';
-  globalShortcut.register(`CommandOrControl+Alt+${pageDownKey}`, () => {
-    pageDown();
-  });
-  
-  // Home/End
-  const scrollToTopKey = shortcuts.scrollToTop || 'Home';
-  globalShortcut.register(`CommandOrControl+Alt+${scrollToTopKey}`, () => {
-    scrollToTop();
-  });
-  
-  const scrollToBottomKey = shortcuts.scrollToBottom || 'End';
-  globalShortcut.register(`CommandOrControl+Alt+${scrollToBottomKey}`, () => {
-    scrollToBottom();
-  });
-  
-  // Widget navigation shortcuts (Left/Right arrows)
-  globalShortcut.register('CommandOrControl+Alt+Right', () => {
-    console.log('➡️ Next widget shortcut triggered');
-    scrollToNextWidget();
-  });
-  
-  globalShortcut.register('CommandOrControl+Alt+Left', () => {
-    console.log('⬅️ Previous widget shortcut triggered');
-    scrollToPreviousWidget();
-  });
-  
-  // Toggle stealth shortcut
-  const toggleStealthKey = shortcuts.toggleStealth || 'F1';
-  globalShortcut.register(toggleStealthKey, () => {
-    console.log('🕵️ Toggle stealth shortcut triggered');
-    // Toggle stealth functionality
-    const currentStealthState = ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled ?? true;
-    const newStealthState = !currentStealthState;
-    
-    // Update settings
-    ADVANCED_SETTINGS.viewSettings.stealthMode.enabled = newStealthState;
-    saveAdvancedSettings(ADVANCED_SETTINGS);
-    
-    // Apply/remove stealth
-    if (newStealthState) {
-      applyStealthToViews();
-    } else {
-      removeStealthFromViews();
-    }
-    
-    console.log(`🕵️ Stealth ${newStealthState ? 'enabled' : 'disabled'} via shortcut`);
-  });
-  
-  // Toggle always on top shortcut
-  globalShortcut.register('CommandOrControl+Alt+T', () => {
-    console.log('🔝 Toggle always on top shortcut triggered');
-    if (mainWindow) {
-      const currentState = mainWindow.isAlwaysOnTop();
-      mainWindow.setAlwaysOnTop(!currentState);
-      
-      // Update advanced settings
-      ADVANCED_SETTINGS.viewSettings.alwaysOnTop = !currentState;
+
+    // Scroll up/down
+    const scrollUpKey = shortcuts.scrollUp || "Up";
+    globalShortcut.register(`CommandOrControl+Alt+${scrollUpKey}`, () => {
+      scrollUp();
+    });
+
+    const scrollDownKey = shortcuts.scrollDown || "Down";
+    globalShortcut.register(`CommandOrControl+Alt+${scrollDownKey}`, () => {
+      scrollDown();
+    });
+
+    // Page up/down
+    const pageUpKey = shortcuts.pageUp || "PageUp";
+    globalShortcut.register(`CommandOrControl+Alt+${pageUpKey}`, () => {
+      pageUp();
+    });
+
+    const pageDownKey = shortcuts.pageDown || "PageDown";
+    globalShortcut.register(`CommandOrControl+Alt+${pageDownKey}`, () => {
+      pageDown();
+    });
+
+    // Home/End
+    const scrollToTopKey = shortcuts.scrollToTop || "Home";
+    globalShortcut.register(`CommandOrControl+Alt+${scrollToTopKey}`, () => {
+      scrollToTop();
+    });
+
+    const scrollToBottomKey = shortcuts.scrollToBottom || "End";
+    globalShortcut.register(`CommandOrControl+Alt+${scrollToBottomKey}`, () => {
+      scrollToBottom();
+    });
+
+    // Widget navigation shortcuts (Left/Right arrows)
+    globalShortcut.register("CommandOrControl+Alt+Right", () => {
+      console.log("➡️ Next widget shortcut triggered");
+      scrollToNextWidget();
+    });
+
+    globalShortcut.register("CommandOrControl+Alt+Left", () => {
+      console.log("⬅️ Previous widget shortcut triggered");
+      scrollToPreviousWidget();
+    });
+
+    // Toggle stealth shortcut
+    const toggleStealthKey = shortcuts.toggleStealth || "F1";
+    globalShortcut.register(toggleStealthKey, () => {
+      console.log("🕵️ Toggle stealth shortcut triggered");
+      // Toggle stealth functionality
+      const currentStealthState =
+        ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled ?? true;
+      const newStealthState = !currentStealthState;
+
+      // Update settings
+      ADVANCED_SETTINGS.viewSettings.stealthMode.enabled = newStealthState;
       saveAdvancedSettings(ADVANCED_SETTINGS);
-      
-      console.log(`🔝 Always on top ${!currentState ? 'enabled' : 'disabled'}`);
-    }
-  });
-  
-  // Minimize/restore window shortcut
-  globalShortcut.register('CommandOrControl+Alt+M', () => {
-    console.log('📦 Minimize/restore window shortcut triggered');
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-        console.log('📦 Window restored');
+
+      // Apply/remove stealth
+      if (newStealthState) {
+        applyStealthToViews();
       } else {
-        mainWindow.minimize();
-        console.log('📦 Window minimized');
+        removeStealthFromViews();
       }
-    }
-  });
-  
-    console.log('✅ All shortcuts registered');
+
+      console.log(
+        `🕵️ Stealth ${newStealthState ? "enabled" : "disabled"} via shortcut`
+      );
+    });
+
+    // Toggle always on top shortcut
+    globalShortcut.register("CommandOrControl+Alt+T", () => {
+      console.log("🔝 Toggle always on top shortcut triggered");
+      if (mainWindow) {
+        const currentState = mainWindow.isAlwaysOnTop();
+        mainWindow.setAlwaysOnTop(!currentState);
+
+        // Update advanced settings
+        ADVANCED_SETTINGS.viewSettings.alwaysOnTop = !currentState;
+        saveAdvancedSettings(ADVANCED_SETTINGS);
+
+        console.log(
+          `🔝 Always on top ${!currentState ? "enabled" : "disabled"}`
+        );
+      }
+    });
+
+    // Minimize/restore window shortcut
+    globalShortcut.register("CommandOrControl+Alt+M", () => {
+      console.log("📦 Minimize/restore window shortcut triggered");
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+          console.log("📦 Window restored");
+        } else {
+          mainWindow.minimize();
+          console.log("📦 Window minimized");
+        }
+      }
+    });
+
+    console.log("✅ All shortcuts registered");
   } catch (error) {
-    console.error('❌ Error registering shortcuts:', error);
+    console.error("❌ Error registering shortcuts:", error);
   }
 }
 
@@ -710,15 +761,15 @@ function registerScrollShortcuts() {
 // -------------------------------------------
 // Initialize widgets
 function initializeWidgets() {
-  console.log('🚀 Initializing widgets...');
-  
+  console.log("🚀 Initializing widgets...");
+
   // Remove all existing views and destroy their webContents
-  Object.values(viewsConfig).forEach(config => {
+  Object.values(viewsConfig).forEach((config) => {
     if (config.view && mainWindow) {
       const view = config.view;
       // Remove da janela principal
       mainWindow.removeBrowserView(view);
-      
+
       // Destroi o webContents para parar todos os processos
       if (view.webContents && !view.webContents.isDestroyed()) {
         console.log(`🔥 Destruindo webContents durante reinicialização`);
@@ -726,13 +777,13 @@ function initializeWidgets() {
       }
     }
   });
-  
+
   // Clear viewsConfig
   viewsConfig = {};
-  
+
   // Load widgets configuration
   const widgets = loadWidgetsConfig();
-  
+
   // Create views for each widget
   Object.entries(widgets).forEach(([key, widgetConfig]) => {
     if (widgetConfig.visible) {
@@ -741,18 +792,18 @@ function initializeWidgets() {
         // Store in viewsConfig
         viewsConfig[key] = {
           ...widgetConfig,
-          view: view
+          view: view,
         };
-        
+
         // Add to main window
         mainWindow.addBrowserView(view);
         console.log(`✅ Widget "${key}" adicionado à janela principal`);
       }
     }
   });
-  
+
   console.log(`✅ Initialized ${Object.keys(viewsConfig).length} widgets`);
-  
+
   // Layout the views
   layoutViews();
 }
@@ -770,14 +821,14 @@ function calculateWindowDimensions() {
   const windowHeight = workArea.height; // Usar toda a altura da work area
   const x = workArea.width - windowWidth - 20; // 20px margin from right
   const y = workArea.y; // Começar do topo da work area (sem margem)
-  
+
   return { width: windowWidth, height: windowHeight, x, y };
 }
 
 // Create the main window
 function createMainWindow() {
-  console.log('🚀 Creating main window...');
-  
+  console.log("🚀 Creating main window...");
+
   const dimensions = calculateWindowDimensions();
 
   mainWindow = new BrowserWindow({
@@ -790,9 +841,11 @@ function createMainWindow() {
     frame: APP_CONFIG.window.frame,
     skipTaskbar: APP_CONFIG.window.skipTaskbar,
     resizable: APP_CONFIG.window.resizable,
-    alwaysOnTop: ADVANCED_SETTINGS.viewSettings?.alwaysOnTop ?? APP_CONFIG.window.alwaysOnTop,
+    alwaysOnTop:
+      ADVANCED_SETTINGS.viewSettings?.alwaysOnTop ??
+      APP_CONFIG.window.alwaysOnTop,
     invisibile: true,
-    backgroundColor: '#00000000',
+    backgroundColor: "#00000000",
     title: "Stealth Widget App", // Título específico para o plugin nativo
     webPreferences: {
       nodeIntegration: false,
@@ -801,52 +854,54 @@ function createMainWindow() {
   });
 
   // Load the main page
-  const mainPagePath = getAppPath(path.join('src', 'pages', 'placeholder', 'index.html'));
+  const mainPagePath = getAppPath(
+    path.join("src", "pages", "placeholder", "index.html")
+  );
   mainWindow.loadFile(mainPagePath);
-  
+
   // Show window when ready
-  mainWindow.once('ready-to-show', () => {
-    console.log('✅ Main window ready');
+  mainWindow.once("ready-to-show", () => {
+    console.log("✅ Main window ready");
     mainWindow.show();
-    
+
     // Initialize widgets after window is ready
     setTimeout(() => {
       initializeWidgets();
-      
+
       // Aplicar stealth após os widgets serem inicializados (se habilitado nas configurações)
       if (ADVANCED_SETTINGS.viewSettings?.stealthMode?.autoStart !== false) {
         setTimeout(() => {
-          console.log('🕵️ Aplicando stealth na janela principal...');
+          console.log("🕵️ Aplicando stealth na janela principal...");
           const stealthResult = applyStealthToViews();
           if (stealthResult) {
-            console.log('✅ Stealth aplicado com sucesso na inicialização');
+            console.log("✅ Stealth aplicado com sucesso na inicialização");
           } else {
-            console.log('⚠️ Falha ao aplicar stealth na inicialização');
+            console.log("⚠️ Falha ao aplicar stealth na inicialização");
           }
         }, 500); // Delay adicional para garantir que os widgets estejam carregados
-  } else {
-        console.log('🕵️ Stealth auto-start desabilitado nas configurações');
+      } else {
+        console.log("🕵️ Stealth auto-start desabilitado nas configurações");
       }
     }, 100); // Small delay to ensure window is fully ready
   });
 
   // Handle window close - minimize to tray instead of closing
-  mainWindow.on('close', (event) => {
+  mainWindow.on("close", (event) => {
     // Prevent default close behavior
     event.preventDefault();
-    
+
     // Hide window instead of closing
     if (mainWindow) {
       mainWindow.hide();
-      console.log('📦 Window hidden to tray');
+      console.log("📦 Window hidden to tray");
     }
   });
 
   // Handle window closed (when app is actually quitting)
-  mainWindow.on('closed', () => {
+  mainWindow.on("closed", () => {
     // Remover stealth antes de fechar
     if (stealthManager) {
-      console.log('👁️ Removendo stealth antes de fechar...');
+      console.log("👁️ Removendo stealth antes de fechar...");
       removeStealthFromViews();
     }
     mainWindow = null;
@@ -856,256 +911,281 @@ function createMainWindow() {
 // -------------------------------------------
 // IPC HANDLERS
 // -------------------------------------------
-const { ipcMain } = require('electron');
+const { ipcMain } = require("electron");
 
 // Handler para obter widgets ativos
-ipcMain.handle('get-active-widgets', () => {
+ipcMain.handle("get-active-widgets", () => {
   return ACTIVE_WIDGETS;
 });
 
 // Handler para obter configuração de widgets
-ipcMain.handle('get-widgets-config', () => {
+ipcMain.handle("get-widgets-config", () => {
   return viewsConfig;
 });
 
 // Handler para obter todos os widgets disponíveis
-ipcMain.handle('get-all-widgets-config', () => {
+ipcMain.handle("get-all-widgets-config", () => {
   return loadAllWidgetsConfig();
 });
 
 // Handler para adicionar widget à lista ativa
-ipcMain.handle('add-active-widget', (event, widgetKey) => {
+ipcMain.handle("add-active-widget", (event, widgetKey) => {
   console.log(`🔧 Tentando adicionar widget "${widgetKey}"`);
-  
+
   if (!ACTIVE_WIDGETS.includes(widgetKey)) {
     const newActiveWidgets = [...ACTIVE_WIDGETS, widgetKey];
     updateActiveWidgets(newActiveWidgets);
-    console.log('✅ Widget adicionado à lista ativa:', widgetKey);
-    
+    console.log("✅ Widget adicionado à lista ativa:", widgetKey);
+
     // Carrega a configuração do widget
     const allWidgets = loadAllWidgetsConfig();
     console.log(`📋 Widgets disponíveis:`, Object.keys(allWidgets));
     console.log(`🔍 Procurando por "${widgetKey}" nos widgets disponíveis`);
-    
+
     if (allWidgets[widgetKey]) {
       console.log(`✅ Configuração encontrada para "${widgetKey}"`);
       viewsConfig[widgetKey] = allWidgets[widgetKey];
-      
+
       // Cria a view usando BrowserView unificado
       const view = createWidgetView(widgetKey, viewsConfig[widgetKey]);
-      console.log(`🔍 BrowserView criada para "${widgetKey}":`, view ? 'SUCCESS' : 'FAILED');
-      
+      console.log(
+        `🔍 BrowserView criada para "${widgetKey}":`,
+        view ? "SUCCESS" : "FAILED"
+      );
+
       if (view && mainWindow) {
         viewsConfig[widgetKey].view = view;
         mainWindow.addBrowserView(view);
         console.log(`✅ Widget "${widgetKey}" carregado dinamicamente`);
-        
+
         // Atualiza o layout
         layoutViews();
-        
+
         return { success: true };
-    } else {
-        console.error(`❌ Erro ao criar BrowserView para widget "${widgetKey}"`);
+      } else {
+        console.error(
+          `❌ Erro ao criar BrowserView para widget "${widgetKey}"`
+        );
         console.error(`   - view:`, view);
-        console.error(`   - mainWindow:`, mainWindow ? 'EXISTS' : 'NULL');
+        console.error(`   - mainWindow:`, mainWindow ? "EXISTS" : "NULL");
         // Remove da lista se falhou
-        const newActiveWidgets = ACTIVE_WIDGETS.filter(w => w !== widgetKey);
+        const newActiveWidgets = ACTIVE_WIDGETS.filter((w) => w !== widgetKey);
         updateActiveWidgets(newActiveWidgets);
         delete viewsConfig[widgetKey];
-        return { success: false, error: 'Erro ao criar view do widget' };
+        return { success: false, error: "Erro ao criar view do widget" };
       }
     } else {
       console.error(`❌ Configuração não encontrada para "${widgetKey}"`);
       // Remove da lista se falhou
-      const newActiveWidgets = ACTIVE_WIDGETS.filter(w => w !== widgetKey);
+      const newActiveWidgets = ACTIVE_WIDGETS.filter((w) => w !== widgetKey);
       updateActiveWidgets(newActiveWidgets);
-      return { success: false, error: 'Configuração do widget não encontrada' };
+      return { success: false, error: "Configuração do widget não encontrada" };
     }
   }
-  return { success: false, error: 'Widget já está ativo' };
+  return { success: false, error: "Widget já está ativo" };
 });
 
 // Handler para remover widget da lista ativa
-ipcMain.handle('remove-active-widget', (event, widgetKey) => {
+ipcMain.handle("remove-active-widget", (event, widgetKey) => {
   console.log(`🔧 Tentando remover widget "${widgetKey}"`);
-  
+
   const index = ACTIVE_WIDGETS.indexOf(widgetKey);
-  if (index > -1 && widgetKey !== 'organizer') { // Proteção: não permite remover organizador
-    const newActiveWidgets = ACTIVE_WIDGETS.filter(w => w !== widgetKey);
+  if (index > -1 && widgetKey !== "organizer") {
+    // Proteção: não permite remover organizador
+    const newActiveWidgets = ACTIVE_WIDGETS.filter((w) => w !== widgetKey);
     updateActiveWidgets(newActiveWidgets);
-    console.log('❌ Widget removido da lista ativa:', widgetKey);
-    
+    console.log("❌ Widget removido da lista ativa:", widgetKey);
+
     // Remove a view do layout e destroi completamente
     if (viewsConfig[widgetKey] && viewsConfig[widgetKey].view) {
       const view = viewsConfig[widgetKey].view;
-      console.log(`🔍 Removendo view para "${widgetKey}":`, view ? 'EXISTS' : 'NULL');
-      
+      console.log(
+        `🔍 Removendo view para "${widgetKey}":`,
+        view ? "EXISTS" : "NULL"
+      );
+
       if (mainWindow && view) {
         // Remove da janela principal
         mainWindow.removeBrowserView(view);
-        console.log(`✅ BrowserView removida da janela principal para "${widgetKey}"`);
-        
+        console.log(
+          `✅ BrowserView removida da janela principal para "${widgetKey}"`
+        );
+
         // Destroi completamente o webContents para parar todos os processos (áudio, vídeo, etc.)
         if (view.webContents && !view.webContents.isDestroyed()) {
           console.log(`🔥 Destruindo webContents para "${widgetKey}"`);
           view.webContents.destroy();
           console.log(`✅ WebContents destruído para "${widgetKey}"`);
         }
-  } else {
+      } else {
         console.error(`❌ Erro ao remover BrowserView para "${widgetKey}"`);
-        console.error(`   - mainWindow:`, mainWindow ? 'EXISTS' : 'NULL');
-        console.error(`   - view:`, view ? 'EXISTS' : 'NULL');
+        console.error(`   - mainWindow:`, mainWindow ? "EXISTS" : "NULL");
+        console.error(`   - view:`, view ? "EXISTS" : "NULL");
       }
       delete viewsConfig[widgetKey];
-  } else {
+    } else {
       console.log(`ℹ️ Nenhuma view encontrada para "${widgetKey}"`);
     }
-    
+
     // Recarrega o layout
     layoutViews();
-    
+
     return { success: true };
   }
-  console.log(`❌ Widget "${widgetKey}" não pode ser removido (não encontrado ou é organizador)`);
-  return { success: false, error: 'Widget não encontrado ou não pode ser removido' };
+  console.log(
+    `❌ Widget "${widgetKey}" não pode ser removido (não encontrado ou é organizador)`
+  );
+  return {
+    success: false,
+    error: "Widget não encontrado ou não pode ser removido",
+  };
 });
 
 // Handler para reordenar views
-ipcMain.handle('reorder-views', (event, newOrder) => {
-  console.log('🔄 Reordenando widgets:', newOrder);
-  
+ipcMain.handle("reorder-views", (event, newOrder) => {
+  console.log("🔄 Reordenando widgets:", newOrder);
+
   // Atualiza a ordem dos widgets ativos
   updateActiveWidgets(newOrder);
-  
+
   // Reorganiza viewsConfig baseado na nova ordem
   const reorderedConfig = {};
-  newOrder.forEach(key => {
+  newOrder.forEach((key) => {
     if (viewsConfig[key]) {
       reorderedConfig[key] = viewsConfig[key];
     }
   });
   viewsConfig = reorderedConfig;
-  
+
   // Recarrega o layout
   layoutViews();
-  
+
   return { success: true };
 });
 
 // Handler para aplicar/remover stealth
-ipcMain.handle('toggle-stealth', (event, action) => {
+ipcMain.handle("toggle-stealth", (event, action) => {
   console.log(`🔧 Toggle stealth: ${action}`);
-  
+
   if (!stealthManager) {
-    return { success: false, error: 'Plugin nativo stealth não disponível' };
+    return { success: false, error: "Plugin nativo stealth não disponível" };
   }
-  
+
   try {
     let result = false;
-    
-    if (action === 'enable') {
+
+    if (action === "enable") {
       result = applyStealthToViews();
       ADVANCED_SETTINGS.viewSettings.stealthMode.enabled = true;
-      console.log(`✅ Stealth ${result ? 'aplicado' : 'não aplicado'}`);
-    } else if (action === 'disable') {
+      console.log(`✅ Stealth ${result ? "aplicado" : "não aplicado"}`);
+    } else if (action === "disable") {
       result = removeStealthFromViews();
       ADVANCED_SETTINGS.viewSettings.stealthMode.enabled = false;
-      console.log(`✅ Stealth ${result ? 'removido' : 'não removido'}`);
+      console.log(`✅ Stealth ${result ? "removido" : "não removido"}`);
     } else {
-      return { success: false, error: 'Ação inválida. Use "enable" ou "disable"' };
+      return {
+        success: false,
+        error: 'Ação inválida. Use "enable" ou "disable"',
+      };
     }
-    
+
     // Update tray menu with new stealth status
     updateTrayStealthStatus();
-    
+
     return { success: result };
-    } catch (error) {
-    console.error('❌ Erro ao toggle stealth:', error.message);
+  } catch (error) {
+    console.error("❌ Erro ao toggle stealth:", error.message);
     return { success: false, error: error.message };
   }
 });
 
 // Handler para obter status do stealth
-ipcMain.handle('get-stealth-status', () => {
+ipcMain.handle("get-stealth-status", () => {
   if (!stealthManager) {
     return { active: false, count: 0 };
   }
-  
-      return { 
+
+  return {
     active: stealthManager.isStealthActive(),
-    count: stealthManager.getStealthedWindowsCount()
+    count: stealthManager.getStealthedWindowsCount(),
   };
 });
 
 // Handler para adicionar views de URLs externas
-ipcMain.handle('add-view', (event, { key, config }) => {
-  console.log(`🔧 Tentando adicionar view externa "${key}" com config:`, config);
-  
+ipcMain.handle("add-view", (event, { key, config }) => {
+  console.log(
+    `🔧 Tentando adicionar view externa "${key}" com config:`,
+    config
+  );
+
   try {
     // Adiciona à lista de widgets ativos
     if (!ACTIVE_WIDGETS.includes(key)) {
       const newActiveWidgets = [...ACTIVE_WIDGETS, key];
       updateActiveWidgets(newActiveWidgets);
-      console.log('✅ Widget externo adicionado à lista ativa:', key);
+      console.log("✅ Widget externo adicionado à lista ativa:", key);
     }
-    
+
     // Armazena a configuração
     viewsConfig[key] = {
       ...config,
-      view: null
+      view: null,
     };
-    
+
     // Cria a BrowserView para a URL externa
     const view = createWidgetView(key, config);
-    console.log(`🔍 BrowserView criada para "${key}":`, view ? 'SUCCESS' : 'FAILED');
-    
+    console.log(
+      `🔍 BrowserView criada para "${key}":`,
+      view ? "SUCCESS" : "FAILED"
+    );
+
     if (view && mainWindow) {
       viewsConfig[key].view = view;
       mainWindow.addBrowserView(view);
       console.log(`✅ Widget externo "${key}" carregado dinamicamente`);
-      
+
       // Atualiza o layout
       layoutViews();
-      
+
       return { success: true };
     } else {
       console.error(`❌ Erro ao criar view para widget externo "${key}"`);
       console.error(`   - view:`, view);
-      console.error(`   - mainWindow:`, mainWindow ? 'EXISTS' : 'NULL');
-      
+      console.error(`   - mainWindow:`, mainWindow ? "EXISTS" : "NULL");
+
       // Remove da lista se falhou
-      const newActiveWidgets = ACTIVE_WIDGETS.filter(w => w !== key);
+      const newActiveWidgets = ACTIVE_WIDGETS.filter((w) => w !== key);
       updateActiveWidgets(newActiveWidgets);
       delete viewsConfig[key];
-      
-      return { success: false, error: 'Erro ao criar view do widget externo' };
+
+      return { success: false, error: "Erro ao criar view do widget externo" };
     }
   } catch (error) {
     console.error(`❌ Erro ao adicionar view externa "${key}":`, error.message);
-    
+
     // Remove da lista se falhou
-    const newActiveWidgets = ACTIVE_WIDGETS.filter(w => w !== key);
+    const newActiveWidgets = ACTIVE_WIDGETS.filter((w) => w !== key);
     updateActiveWidgets(newActiveWidgets);
     delete viewsConfig[key];
-    
+
     return { success: false, error: error.message };
   }
 });
 
 // Handler para recarregar widgets após mudanças
-ipcMain.handle('reload-widgets', () => {
-  console.log('🔄 Recarregando widgets...');
-  
+ipcMain.handle("reload-widgets", () => {
+  console.log("🔄 Recarregando widgets...");
+
   // Destroi todas as views existentes
-  Object.values(viewsConfig).forEach(config => {
+  Object.values(viewsConfig).forEach((config) => {
     if (config.view && mainWindow) {
       const view = config.view;
-      
+
       // Para BrowserView, remove via removeBrowserView e destrói webContents
       if (view.webContents && view.webContents.id) {
         // É uma BrowserView
         mainWindow.removeBrowserView(view);
-        
+
         // Destroi o webContents para parar todos os processos
         if (!view.webContents.isDestroyed()) {
           console.log(`🔥 Destruindo webContents durante reload`);
@@ -1114,100 +1194,100 @@ ipcMain.handle('reload-widgets', () => {
       }
     }
   });
-  
+
   // Limpa a configuração
   viewsConfig = {};
-  
+
   // Recarrega widgets
   initializeWidgets();
-  
+
   return { success: true };
 });
 
 // Handler para obter configurações avançadas
-ipcMain.handle('get-advanced-settings', () => {
+ipcMain.handle("get-advanced-settings", () => {
   return ADVANCED_SETTINGS;
 });
 
 // Handler para salvar configurações avançadas
-ipcMain.handle('save-advanced-settings', (event, newSettings) => {
-  console.log('💾 Salvando configurações avançadas:', newSettings);
-  
+ipcMain.handle("save-advanced-settings", (event, newSettings) => {
+  console.log("💾 Salvando configurações avançadas:", newSettings);
+
   try {
     ADVANCED_SETTINGS = { ...ADVANCED_SETTINGS, ...newSettings };
     const success = saveAdvancedSettings(ADVANCED_SETTINGS);
-    
+
     if (success) {
       // Re-registrar shortcuts se as configurações de teclas mudaram
       if (newSettings.shortcuts) {
-        console.log('⌨️ Re-registrando shortcuts com novas configurações...');
+        console.log("⌨️ Re-registrando shortcuts com novas configurações...");
         globalShortcut.unregisterAll();
         registerScrollShortcuts();
       }
-      
+
       // Recriar janela se configurações de view mudaram
       if (newSettings.viewSettings && mainWindow) {
-        console.log('🔄 Recriando janela com novas configurações...');
+        console.log("🔄 Recriando janela com novas configurações...");
         const newDimensions = calculateWindowDimensions();
         mainWindow.setBounds({
           width: newDimensions.width,
           height: newDimensions.height,
           x: newDimensions.x,
-          y: newDimensions.y
+          y: newDimensions.y,
         });
-        
+
         // Atualizar alwaysOnTop se mudou
         if (newSettings.viewSettings.alwaysOnTop !== undefined) {
           mainWindow.setAlwaysOnTop(newSettings.viewSettings.alwaysOnTop);
         }
       }
-      
+
       return { success: true };
     } else {
-      return { success: false, error: 'Erro ao salvar configurações' };
+      return { success: false, error: "Erro ao salvar configurações" };
     }
-    } catch (error) {
-    console.error('❌ Erro ao salvar configurações avançadas:', error.message);
+  } catch (error) {
+    console.error("❌ Erro ao salvar configurações avançadas:", error.message);
     return { success: false, error: error.message };
   }
 });
 
 // Handler para obter status do stealth
-ipcMain.handle('get-stealth-mode-status', () => {
-      return { 
+ipcMain.handle("get-stealth-mode-status", () => {
+  return {
     enabled: ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled ?? true,
-    autoStart: ADVANCED_SETTINGS.viewSettings?.stealthMode?.autoStart ?? true
+    autoStart: ADVANCED_SETTINGS.viewSettings?.stealthMode?.autoStart ?? true,
   };
 });
 
 // Handler para toggle always on top
-ipcMain.handle('toggle-always-on-top', () => {
+ipcMain.handle("toggle-always-on-top", () => {
   if (mainWindow) {
     const currentState = mainWindow.isAlwaysOnTop();
     mainWindow.setAlwaysOnTop(!currentState);
-    
+
     // Update advanced settings
     ADVANCED_SETTINGS.viewSettings.alwaysOnTop = !currentState;
     saveAdvancedSettings(ADVANCED_SETTINGS);
-    
-    console.log(`🔝 Always on top ${!currentState ? 'enabled' : 'disabled'}`);
+
+    console.log(`🔝 Always on top ${!currentState ? "enabled" : "disabled"}`);
     return { success: true, alwaysOnTop: !currentState };
   }
-  return { success: false, error: 'Main window not available' };
+  return { success: false, error: "Main window not available" };
 });
 
 // Handler para minimizar janela
-ipcMain.handle('minimize-window', () => {
+ipcMain.handle("minimize-window", () => {
   if (mainWindow) {
     mainWindow.minimize();
-    console.log('📦 Window minimized');
+    console.log("📦 Window minimized");
     return { success: true };
   }
-  return { success: false, error: 'Main window not available' };
+  return { success: false, error: "Main window not available" };
 });
 
 // Handler para obter status do always on top
-ipcMain.handle('get-always-on-top-status', () => {
+ipcMain.handle("get-always-on-top-status", () => {
   if (mainWindow) {
     return { alwaysOnTop: mainWindow.isAlwaysOnTop() };
   }
@@ -1215,28 +1295,31 @@ ipcMain.handle('get-always-on-top-status', () => {
 });
 
 // Auto-start handlers
-ipcMain.handle('enable-auto-start', async () => {
+ipcMain.handle("enable-auto-start", async () => {
   return await enableAutoStart();
 });
 
-ipcMain.handle('disable-auto-start', async () => {
+ipcMain.handle("disable-auto-start", async () => {
   return await disableAutoStart();
 });
 
-ipcMain.handle('get-auto-start-status', async () => {
+ipcMain.handle("get-auto-start-status", async () => {
   const enabled = await isAutoStartEnabled();
   return { enabled };
 });
 
-ipcMain.handle('toggle-auto-start', async (event, action) => {
+ipcMain.handle("toggle-auto-start", async (event, action) => {
   console.log(`🚀 Toggle auto-start: ${action}`);
-  
-  if (action === 'enable') {
+
+  if (action === "enable") {
     return await enableAutoStart();
-  } else if (action === 'disable') {
+  } else if (action === "disable") {
     return await disableAutoStart();
   } else {
-    return { success: false, error: 'Ação inválida. Use "enable" ou "disable"' };
+    return {
+      success: false,
+      error: 'Ação inválida. Use "enable" ou "disable"',
+    };
   }
 });
 
@@ -1246,126 +1329,140 @@ ipcMain.handle('toggle-auto-start', async (event, action) => {
 
 // Force quit function to properly close the app
 function forceQuit() {
-  console.log('🚪 Forçando quit completo do app...');
-  
+  console.log("🚪 Forçando quit completo do app...");
+
   // Clean up stealth first
   if (stealthManager) {
-    console.log('👁️ Removendo stealth antes de sair...');
+    console.log("👁️ Removendo stealth antes de sair...");
     removeStealthFromViews();
   }
-  
+
   // Clean up all views and their webContents
-  Object.values(viewsConfig).forEach(config => {
-    if (config.view && config.view.webContents && !config.view.webContents.isDestroyed()) {
-      console.log('🔥 Destruindo webContents durante quit...');
+  Object.values(viewsConfig).forEach((config) => {
+    if (
+      config.view &&
+      config.view.webContents &&
+      !config.view.webContents.isDestroyed()
+    ) {
+      console.log("🔥 Destruindo webContents durante quit...");
       config.view.webContents.destroy();
     }
   });
-  
+
   // Clear viewsConfig
   viewsConfig = {};
-  
+
   // Clean up shortcuts
   globalShortcut.unregisterAll();
-  
+
   // Clean up tray
   if (tray) {
     tray.destroy();
     tray = null;
-    console.log('🧹 System tray cleaned up');
+    console.log("🧹 System tray cleaned up");
   }
-  
+
   // Force quit the app
   app.exit(0);
 }
 
 // Create system tray
 function createTray() {
-  console.log('🔧 Creating system tray...');
-  
+  console.log("🔧 Creating system tray...");
+
   // Use the smallest icon from the build folder
   let iconPath;
   if (app.isPackaged) {
     // In production, use the icon from extraResources
-    iconPath = path.join(process.resourcesPath, 'build', 'icon-16.png');
+    iconPath = path.join(process.resourcesPath, "build", "icon-16.png");
   } else {
     // In development, use the icon from build folder
-    iconPath = path.join(__dirname, '..', '..', 'build', 'icon-16.png');
+    iconPath = path.join(__dirname, "..", "..", "build", "icon-16.png");
   }
-  
+
   // Create tray with icon
   try {
     tray = new Tray(iconPath);
-    console.log('✅ System tray created successfully');
+    console.log("✅ System tray created successfully");
   } catch (error) {
-    console.error('❌ Error creating system tray:', error);
-    console.log('🔧 Trying with fallback icon...');
+    console.error("❌ Error creating system tray:", error);
+    console.log("🔧 Trying with fallback icon...");
     // Fallback to a different icon if the main one fails
-    const fallbackIconPath = app.isPackaged 
-      ? path.join(process.resourcesPath, 'build', 'icon.png')
-      : path.join(__dirname, '..', '..', 'build', 'icon.png');
+    const fallbackIconPath = app.isPackaged
+      ? path.join(process.resourcesPath, "build", "icon.png")
+      : path.join(__dirname, "..", "..", "build", "icon.png");
     try {
       tray = new Tray(fallbackIconPath);
-      console.log('✅ System tray created with fallback icon');
+      console.log("✅ System tray created with fallback icon");
     } catch (fallbackError) {
-      console.error('❌ Failed to create tray with fallback icon:', fallbackError);
+      console.error(
+        "❌ Failed to create tray with fallback icon:",
+        fallbackError
+      );
       return;
     }
   }
-  
+
   // Create context menu
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: 'Stealth Widget App',
-      enabled: false
-    },
-    { type: 'separator' },
-    {
-      label: `Stealth: ${ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled ? 'Ativo' : 'Inativo'}`,
+      label: "Stealth Widget App",
       enabled: false,
-      id: 'stealth-status'
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: 'Iniciar com Windows',
-      type: 'checkbox',
+      label: `Stealth: ${
+        ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled
+          ? "Ativo"
+          : "Inativo"
+      }`,
+      enabled: false,
+      id: "stealth-status",
+    },
+    { type: "separator" },
+    {
+      label: "Iniciar com Windows",
+      type: "checkbox",
       checked: false,
-      id: 'auto-start-status',
+      id: "auto-start-status",
       click: async () => {
         try {
           // Get current status
           const currentStatus = await isAutoStartEnabled();
-          const newAction = currentStatus ? 'disable' : 'enable';
-          
+          const newAction = currentStatus ? "disable" : "enable";
+
           // Toggle auto-start
-          const result = newAction === 'enable' ? await enableAutoStart() : await disableAutoStart();
-          
+          const result =
+            newAction === "enable"
+              ? await enableAutoStart()
+              : await disableAutoStart();
+
           if (result.success) {
             // Update tray menu
             updateTrayAutoStartStatus();
           }
         } catch (error) {
-          console.error('Erro ao alternar auto-start:', error);
+          console.error("Erro ao alternar auto-start:", error);
         }
-      }
+      },
     },
-    { type: 'separator' },
+    { type: "separator" },
     {
-      label: 'Quit',
+      label: "Quit",
       click: () => {
         forceQuit();
-      }
-    }
+      },
+    },
   ]);
-  
+
   // Set tooltip
-  tray.setToolTip('Stealth Widget App - Clique para minimizar/restaurar');
-  
+  tray.setToolTip("Stealth Widget App - Clique para minimizar/restaurar");
+
   // Set context menu
   tray.setContextMenu(contextMenu);
-  
+
   // Handle tray click (minimize/restore window)
-  tray.on('click', () => {
+  tray.on("click", () => {
     if (mainWindow) {
       if (mainWindow.isVisible()) {
         mainWindow.minimize();
@@ -1375,8 +1472,8 @@ function createTray() {
       }
     }
   });
-  
-  console.log('✅ System tray created successfully');
+
+  console.log("✅ System tray created successfully");
 }
 
 // Update stealth status in tray menu
@@ -1384,48 +1481,55 @@ function updateTrayStealthStatus() {
   if (tray) {
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Stealth Widget App',
-        enabled: false
-      },
-      { type: 'separator' },
-      {
-        label: `Stealth: ${ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled ? 'Ativo' : 'Inativo'}`,
+        label: "Stealth Widget App",
         enabled: false,
-        id: 'stealth-status'
       },
-      { type: 'separator' },
+      { type: "separator" },
       {
-        label: 'Iniciar com Windows',
-        type: 'checkbox',
+        label: `Stealth: ${
+          ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled
+            ? "Ativo"
+            : "Inativo"
+        }`,
+        enabled: false,
+        id: "stealth-status",
+      },
+      { type: "separator" },
+      {
+        label: "Iniciar com Windows",
+        type: "checkbox",
         checked: false,
-        id: 'auto-start-status',
+        id: "auto-start-status",
         click: async () => {
           try {
             // Get current status
             const currentStatus = await isAutoStartEnabled();
-            const newAction = currentStatus ? 'disable' : 'enable';
-            
+            const newAction = currentStatus ? "disable" : "enable";
+
             // Toggle auto-start
-            const result = newAction === 'enable' ? await enableAutoStart() : await disableAutoStart();
-            
+            const result =
+              newAction === "enable"
+                ? await enableAutoStart()
+                : await disableAutoStart();
+
             if (result.success) {
               // Update tray menu
               updateTrayAutoStartStatus();
             }
           } catch (error) {
-            console.error('Erro ao alternar auto-start:', error);
+            console.error("Erro ao alternar auto-start:", error);
           }
-        }
+        },
       },
-      { type: 'separator' },
+      { type: "separator" },
       {
-        label: 'Quit',
+        label: "Quit",
         click: () => {
           forceQuit();
-        }
-      }
+        },
+      },
     ]);
-    
+
     tray.setContextMenu(contextMenu);
   }
 }
@@ -1437,51 +1541,58 @@ async function updateTrayAutoStartStatus() {
       const enabled = await isAutoStartEnabled();
       const contextMenu = Menu.buildFromTemplate([
         {
-          label: 'Stealth Widget App',
-          enabled: false
-        },
-        { type: 'separator' },
-        {
-          label: `Stealth: ${ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled ? 'Ativo' : 'Inativo'}`,
+          label: "Stealth Widget App",
           enabled: false,
-          id: 'stealth-status'
         },
-        { type: 'separator' },
+        { type: "separator" },
         {
-          label: 'Iniciar com Windows',
-          type: 'checkbox',
+          label: `Stealth: ${
+            ADVANCED_SETTINGS.viewSettings?.stealthMode?.enabled
+              ? "Ativo"
+              : "Inativo"
+          }`,
+          enabled: false,
+          id: "stealth-status",
+        },
+        { type: "separator" },
+        {
+          label: "Iniciar com Windows",
+          type: "checkbox",
           checked: enabled,
-          id: 'auto-start-status',
+          id: "auto-start-status",
           click: async () => {
             try {
               // Get current status
               const currentStatus = await isAutoStartEnabled();
-              const newAction = currentStatus ? 'disable' : 'enable';
-              
+              const newAction = currentStatus ? "disable" : "enable";
+
               // Toggle auto-start
-              const result = newAction === 'enable' ? await enableAutoStart() : await disableAutoStart();
-              
+              const result =
+                newAction === "enable"
+                  ? await enableAutoStart()
+                  : await disableAutoStart();
+
               if (result.success) {
                 // Update tray menu
                 updateTrayAutoStartStatus();
               }
             } catch (error) {
-              console.error('Erro ao alternar auto-start:', error);
+              console.error("Erro ao alternar auto-start:", error);
             }
-          }
+          },
         },
-        { type: 'separator' },
+        { type: "separator" },
         {
-          label: 'Quit',
+          label: "Quit",
           click: () => {
             forceQuit();
-          }
-        }
+          },
+        },
       ]);
-      
+
       tray.setContextMenu(contextMenu);
     } catch (error) {
-      console.error('Erro ao atualizar status do auto-start no tray:', error);
+      console.error("Erro ao atualizar status do auto-start no tray:", error);
     }
   }
 }
@@ -1494,11 +1605,11 @@ function configureProcessIdentity() {
   try {
     // Set process title for better identification in Task Manager
     process.title = `Stealth Widget App v${APP_CONFIG.version}`;
-    
+
     console.log(`🏷️ Process configured: ${process.title}`);
     console.log(`📋 Process ID: ${process.pid}`);
   } catch (error) {
-    console.error('❌ Error configuring process identity:', error.message);
+    console.error("❌ Error configuring process identity:", error.message);
   }
 }
 
@@ -1507,30 +1618,30 @@ function configureProcessIdentity() {
 // -------------------------------------------
 // App event handlers
 app.whenReady().then(() => {
-  console.log('🚀 App is ready, starting initialization...');
-  console.log('📦 App is packaged:', app.isPackaged);
-  console.log('📂 Resources path:', process.resourcesPath);
-  
+  console.log("🚀 App is ready, starting initialization...");
+  console.log("📦 App is packaged:", app.isPackaged);
+  console.log("📂 Resources path:", process.resourcesPath);
+
   // Configure process identity first
   configureProcessIdentity();
-  
+
   // Load advanced settings first
   ADVANCED_SETTINGS = loadAdvancedSettings();
-  console.log('⚙️ Advanced settings loaded:', ADVANCED_SETTINGS);
-  
+  console.log("⚙️ Advanced settings loaded:", ADVANCED_SETTINGS);
+
   // Load settings and update ACTIVE_WIDGETS
   const settings = loadSettings();
   ACTIVE_WIDGETS = settings.activeWidgets;
-  console.log('🎯 Active widgets loaded from settings:', ACTIVE_WIDGETS);
-  
+  console.log("🎯 Active widgets loaded from settings:", ACTIVE_WIDGETS);
+
   // Initialize auto-launcher
   initializeAutoLauncher();
-  
+
   createMainWindow();
-  
+
   // Create system tray
   createTray();
-  
+
   // Register scroll shortcuts
   registerScrollShortcuts();
 
@@ -1552,21 +1663,21 @@ app.on("window-all-closed", (event) => {
 app.on("will-quit", () => {
   // Clean up shortcuts
   globalShortcut.unregisterAll();
-  
+
   // Clean up tray
   if (tray) {
     tray.destroy();
     tray = null;
-    console.log('🧹 System tray cleaned up');
+    console.log("🧹 System tray cleaned up");
   }
 });
 
 app.on("before-quit", (event) => {
-  console.log('👋 App is quitting...');
-  
+  console.log("👋 App is quitting...");
+
   // Prevent default quit behavior to allow cleanup
   event.preventDefault();
-  
+
   // Force quit with proper cleanup
   forceQuit();
 });
@@ -1574,5 +1685,5 @@ app.on("before-quit", (event) => {
 // Export for potential external use
 module.exports = {
   createMainWindow,
-  getAppPath
+  getAppPath,
 };
