@@ -138,7 +138,9 @@ function loadAdvancedSettings() {
         pageDown: "PageDown",
         scrollToTop: "Home",
         scrollToBottom: "End",
-        toggleStealth: "F1"
+        toggleStealth: "F1",
+        nextWidget: "ArrowRight",
+        previousWidget: "ArrowLeft"
       },
       viewSettings: {
         defaultWidth: 1200,
@@ -496,6 +498,99 @@ function pageDown() {
   scrollDown(pageScrollStep);
 }
 
+// Scroll to next widget (horizontal navigation)
+function scrollToNextWidget() {
+  if (!mainWindow || viewsLayout.length === 0) return;
+  
+  const [winWidth, winHeight] = mainWindow.getSize();
+  const windowTop = scrollOffset;
+  const windowBottom = scrollOffset + winHeight;
+  
+  console.log(`🔄 Scrolling to next widget. Current offset: ${scrollOffset}px`);
+  console.log(`📏 Window bounds: top=${windowTop}px, bottom=${windowBottom}px`);
+  
+  // Find the next widget that is not fully visible or not visible at all
+  let targetWidget = null;
+  
+  for (let i = 0; i < viewsLayout.length; i++) {
+    const widget = viewsLayout[i];
+    const widgetTop = widget.y;
+    const widgetBottom = widget.y + widget.height;
+    
+    // Check if widget is below current viewport
+    if (widgetTop >= windowBottom) {
+      targetWidget = widget;
+      break;
+    }
+    
+    // Check if widget is partially visible at the bottom
+    if (widgetTop < windowBottom && widgetBottom > windowBottom) {
+      targetWidget = widget;
+      break;
+    }
+  }
+  
+  if (targetWidget) {
+    // Calculate new scroll offset to position widget with half gap at bottom
+    // Position the widget so there's half the gap between its bottom and window bottom
+    const halfGap = LAYOUT_CONFIG.gap / 2;
+    const newOffset = Math.max(0, targetWidget.y + targetWidget.height - winHeight + halfGap);
+    scrollOffset = Math.min(newOffset, maxScrollOffset);
+    layoutViews();
+    console.log(`⬇️ Scrolled to next widget "${targetWidget.key}" at offset ${scrollOffset}px (positioned with ${halfGap}px gap at bottom)`);
+  } else {
+    // If no next widget found, scroll to bottom
+    scrollToBottom();
+    console.log(`⬇️ No next widget found, scrolled to bottom`);
+  }
+}
+
+// Scroll to previous widget (horizontal navigation)
+function scrollToPreviousWidget() {
+  if (!mainWindow || viewsLayout.length === 0) return;
+  
+  const [winWidth, winHeight] = mainWindow.getSize();
+  const windowTop = scrollOffset;
+  const windowBottom = scrollOffset + winHeight;
+  
+  console.log(`🔄 Scrolling to previous widget. Current offset: ${scrollOffset}px`);
+  console.log(`📏 Window bounds: top=${windowTop}px, bottom=${windowBottom}px`);
+  
+  // Find the previous widget that is not fully visible or not visible at all
+  let targetWidget = null;
+  
+  // Search from bottom to top
+  for (let i = viewsLayout.length - 1; i >= 0; i--) {
+    const widget = viewsLayout[i];
+    const widgetTop = widget.y;
+    const widgetBottom = widget.y + widget.height;
+    
+    // Check if widget is above current viewport
+    if (widgetBottom <= windowTop) {
+      targetWidget = widget;
+      break;
+    }
+    
+    // Check if widget is partially visible at the top
+    if (widgetTop < windowTop && widgetBottom > windowTop) {
+      targetWidget = widget;
+      break;
+    }
+  }
+  
+  if (targetWidget) {
+    // Calculate new scroll offset to make the widget fully visible at the top
+    const newOffset = Math.max(0, targetWidget.y - LAYOUT_CONFIG.topGap);
+    scrollOffset = Math.min(newOffset, maxScrollOffset);
+    layoutViews();
+    console.log(`⬆️ Scrolled to previous widget "${targetWidget.key}" at offset ${scrollOffset}px`);
+  } else {
+    // If no previous widget found, scroll to top
+    scrollToTop();
+    console.log(`⬆️ No previous widget found, scrolled to top`);
+  }
+}
+
 // -------------------------------------------
 // SHORTCUT FUNCTIONS
 // -------------------------------------------
@@ -540,6 +635,17 @@ function registerScrollShortcuts() {
   const scrollToBottomKey = shortcuts.scrollToBottom || 'End';
   globalShortcut.register(`CommandOrControl+Alt+${scrollToBottomKey}`, () => {
     scrollToBottom();
+  });
+  
+  // Widget navigation shortcuts (Left/Right arrows)
+  globalShortcut.register('CommandOrControl+Alt+Right', () => {
+    console.log('➡️ Next widget shortcut triggered');
+    scrollToNextWidget();
+  });
+  
+  globalShortcut.register('CommandOrControl+Alt+Left', () => {
+    console.log('⬅️ Previous widget shortcut triggered');
+    scrollToPreviousWidget();
   });
   
   // Toggle stealth shortcut
