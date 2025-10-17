@@ -405,6 +405,13 @@ function createWidgetView(widgetKey, widgetConfig) {
       Object.assign(webPreferences, widgetConfig.webPreferences);
     }
 
+    // Preload para página de configurações
+    if (widgetKey === "settings") {
+      webPreferences.preload = path.join(__dirname, "preload.js");
+      webPreferences.contextIsolation = true;
+      webPreferences.nodeIntegration = false;
+    }
+
     console.log(`🔧 WebPreferences for "${widgetKey}":`, webPreferences);
 
     const view = new BrowserView({ webPreferences });
@@ -802,6 +809,27 @@ function initializeWidgets() {
     }
   });
 
+  // Load external userSites from persisted settings
+  try {
+    const persisted = loadSettings();
+    const sites = Array.isArray(persisted.userSites) ? persisted.userSites : [];
+    sites.forEach((siteUrl, idx) => {
+      const key = `site-${idx + 1}`;
+      const view = createWidgetView(key, {
+        url: siteUrl,
+        height: 800,
+        visible: true,
+      });
+      if (view && mainWindow) {
+        viewsConfig[key] = { url: siteUrl, height: 800, visible: true, view };
+        mainWindow.addBrowserView(view);
+        console.log(`✅ External site view added: ${siteUrl}`);
+      }
+    });
+  } catch (e) {
+    console.warn("⚠️ Unable to load userSites:", e?.message);
+  }
+
   console.log(`✅ Initialized ${Object.keys(viewsConfig).length} widgets`);
 
   // Layout the views
@@ -926,6 +954,43 @@ ipcMain.handle("get-widgets-config", () => {
 // Handler para obter todos os widgets disponíveis
 ipcMain.handle("get-all-widgets-config", () => {
   return loadAllWidgetsConfig();
+});
+
+// ===== Settings persistence (basic settings + userSites) =====
+ipcMain.handle("settings:get", () => {
+  return loadSettings();
+});
+
+ipcMain.handle("settings:update", async (event, partial) => {
+  try {
+    const current = loadSettings();
+    const merged = {
+      ...current,
+      ...partial,
+      stealth: { ...(current.stealth || {}), ...(partial?.stealth || {}) },
+      shortcuts: { ...(current.shortcuts || {}), ...(partial?.shortcuts || {}) },
+    };
+
+    if (partial?.alwaysOnTop !== undefined && mainWindow) {
+      mainWindow.setAlwaysOnTop(!!partial.alwaysOnTop);
+    }
+
+    if (partial?.autoStart !== undefined) {
+      try {
+        if (partial.autoStart) {
+          await enableAutoStart();
+        } else {
+          await disableAutoStart();
+        }
+      } catch (_) {}
+    }
+
+    const ok = saveSettings(merged);
+    return ok ? { success: true, settings: merged } : { success: false };
+  } catch (error) {
+    console.error("Erro em settings:update:", error);
+    return { success: false, error: error.message };
+  }
 });
 
 // Handler para adicionar widget à lista ativa
@@ -1170,6 +1235,27 @@ ipcMain.handle("add-view", (event, { key, config }) => {
 
     return { success: false, error: error.message };
   }
+});
+
+// Compat: APIs chamadas pela página de settings
+ipcMain.handle("stealth:api:enable", () => {
+  const result = applyStealthToViews();
+  if (ADVANCED_SETTINGS?.viewSettings?.stealthMode) {
+    ADVANCED_SETTINGS.viewSettings.stealthMode.enabled = true;
+    saveAdvancedSettings(ADVANCED_SETTINGS);
+    updateTrayStealthStatus();
+  }
+  return { success: !!result };
+});
+
+ipcMain.handle("stealth:api:disable", () => {
+  const result = removeStealthFromViews();
+  if (ADVANCED_SETTINGS?.viewSettings?.stealthMode) {
+    ADVANCED_SETTINGS.viewSettings.stealthMode.enabled = false;
+    saveAdvancedSettings(ADVANCED_SETTINGS);
+    updateTrayStealthStatus();
+  }
+  return { success: !!result };
 });
 
 // Handler para recarregar widgets após mudanças
