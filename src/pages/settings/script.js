@@ -308,6 +308,17 @@ const updateSettings = debounce(async (partial) => {
   }
 }, CONFIG.UI.DEBOUNCE_DELAY);
 
+// Atualização imediata (sem debounce) para ações críticas como adicionar/remover sites
+async function updateSettingsImmediate(partial) {
+  try {
+    await window.settingsAPI?.update(partial);
+    showNotification(CONFIG.MESSAGES.SETTINGS_SAVED, 'success');
+  } catch (error) {
+    console.error('Erro ao salvar configurações (imediato):', error);
+    showNotification('Erro ao salvar configurações', 'error');
+  }
+}
+
 async function loadSettings() {
   try {
     const settings = await window.settingsAPI?.get();
@@ -357,11 +368,14 @@ function renderSites(sites) {
     return;
   }
   
-  sites.forEach((url, index) => {
+  sites.forEach((siteEntry, index) => {
+    const url = typeof siteEntry === 'string' ? siteEntry : siteEntry?.url;
+    const height = typeof siteEntry === 'object' && siteEntry?.height ? siteEntry.height : 800;
     const siteItem = document.createElement('div');
     siteItem.className = 'site-item';
     siteItem.innerHTML = `
       <span class="site-url">${url}</span>
+      <span class="site-height" style="margin-left:8px;opacity:.7">h:${height}px</span>
       <button class="remove-button" data-index="${index}">${CONFIG.TEXTS.BUTTONS.REMOVE}</button>
     `;
     
@@ -389,10 +403,14 @@ async function addSite() {
   try {
     const settings = await window.settingsAPI?.get();
     const currentSites = settings?.userSites || [];
-    const newSites = Array.from(new Set([...currentSites, url]));
-    
-    await updateSettings({ userSites: newSites });
-    renderSites(newSites);
+    // Migra strings para objetos e evita duplicatas por URL
+    const normalized = currentSites.map((e) => typeof e === 'string' ? { url: e, height: 800 } : { url: e.url, height: e.height || 800 });
+    if (!normalized.find((e) => e.url === url)) {
+      normalized.push({ url, height: 800 });
+    }
+    // Salvar imediatamente
+    await updateSettingsImmediate({ userSites: normalized });
+    renderSites(normalized);
     elements.siteInput.value = '';
     showNotification(CONFIG.MESSAGES.SITE_ADDED, 'success');
   } catch (error) {
@@ -405,10 +423,12 @@ async function removeSite(index) {
   try {
     const settings = await window.settingsAPI?.get();
     const currentSites = settings?.userSites || [];
-    const newSites = currentSites.filter((_, i) => i !== index);
+    const normalized = currentSites.map((e) => typeof e === 'string' ? { url: e, height: 800 } : { url: e.url, height: e.height || 800 });
+    const updated = normalized.filter((_, i) => i !== index);
     
-    await updateSettings({ userSites: newSites });
-    renderSites(newSites);
+    // Salvar imediatamente
+    await updateSettingsImmediate({ userSites: updated });
+    renderSites(updated);
     showNotification(CONFIG.MESSAGES.SITE_REMOVED, 'success');
   } catch (error) {
     console.error('Erro ao remover site:', error);
@@ -498,3 +518,4 @@ if (document.readyState === 'loading') {
 } else {
   initializeSettings();
 }
+//Test 1313414124

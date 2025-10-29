@@ -1,6 +1,6 @@
 {
   "name": "shii",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A minimalist and secure desktop client for Google Gemini API, designed for students with privacy and productivity focus",
   "main": "./src/core/main.js",
   "type": "commonjs",
@@ -14,8 +14,8 @@
     "dist": "npm run build",
     "dist:win": "npm run build:win",
     "dist:zip": "npm run build:win-zip",
-    "create-zip": "powershell -Command \"Compress-Archive -Path 'dist/win-unpacked/*' -DestinationPath 'dist/Shii!-Portable-2.0.0.zip' -Force\"",
-    "create-zip-new": "powershell -Command \"Compress-Archive -Path 'dist-new/win-unpacked/*' -DestinationPath 'dist-new/Shii!-Portable-2.0.0.zip' -Force\"",
+    "create-zip": "powershell -Command \"$v=(Get-Content package.json -Raw | ConvertFrom-Json).version; Compress-Archive -Path 'dist/win-unpacked/*' -DestinationPath \"dist/Shii!-Portable-$v.zip\" -Force\"",
+    "create-zip-new": "powershell -Command \"$v=(Get-Content package.json -Raw | ConvertFrom-Json).version; Compress-Archive -Path 'dist-new/win-unpacked/*' -DestinationPath \"dist-new/Shii!-Portable-$v.zip\" -Force\"",
     "pack": "electron-builder --dir"
   },
   "keywords": [

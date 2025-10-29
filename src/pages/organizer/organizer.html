@@ -295,6 +295,23 @@
             // Carrega a ordem atual das views do processo principal (baseada em ACTIVE_WIDGETS)
             let widgetOrder = await ipcRenderer.invoke('get-active-widgets');
 
+            // Carrega rótulos persistidos e nomes de userSites, mesclando em viewNames
+            try {
+                const persistedSettings = await ipcRenderer.invoke('settings:get');
+                const labels = (persistedSettings && persistedSettings.widgetLabels) || {};
+                Object.keys(labels).forEach(k => {
+                    if (typeof labels[k] === 'string' && labels[k].trim()) {
+                        viewNames[k] = labels[k].trim();
+                    }
+                });
+                const sites = Array.isArray(persistedSettings?.userSites) ? persistedSettings.userSites : [];
+                sites.forEach(s => {
+                    const k = s?.key;
+                    const nm = (s && typeof s.name === 'string' && s.name.trim()) ? s.name.trim() : '';
+                    if (k && nm) viewNames[k] = nm;
+                });
+            } catch (_) {}
+
             // Mapeamento de nomes amigáveis para as views
             const viewNames = {
                 'clock': 'Relógio',
@@ -471,6 +488,7 @@
                                 url: url,
                                 height: height,
                                 visible: true,
+                                name: name,
                                 webPreferences: {
                                     nodeIntegration: false,
                                     contextIsolation: true

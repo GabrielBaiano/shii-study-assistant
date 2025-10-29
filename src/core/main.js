@@ -73,10 +73,33 @@ const LAYOUT_CONFIG = {
 // SETTINGS FUNCTIONS
 // -------------------------------------------
 
+// Resolve persisted config path (outside asar when packaged)
+function getPersistPath(fileName) {
+  try {
+    // Sempre persistir em userData/config para comportamento consistente em dev e prod
+    const userDir = app.getPath("userData");
+    const dir = path.join(userDir, "config");
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    return path.join(dir, fileName);
+  } catch (_) {
+    // Fallback para diretório local do app
+    return path.join(__dirname, "config", fileName);
+  }
+}
+
 // Load settings from file
 function loadSettings() {
   try {
-    const settingsPath = path.join(__dirname, "config", "settings.json");
+    const settingsPath = getPersistPath("settings.json");
+    // Seed persisted file on first run when packaged
+    if (!fs.existsSync(settingsPath)) {
+      try {
+        const bundled = path.join(__dirname, "config", "settings.json");
+        if (fs.existsSync(bundled)) {
+          fs.writeFileSync(settingsPath, fs.readFileSync(bundled, "utf8"), "utf8");
+        }
+      } catch (_) {}
+    }
     const settingsData = fs.readFileSync(settingsPath, "utf8");
     const settings = JSON.parse(settingsData);
 
@@ -100,7 +123,7 @@ function loadSettings() {
 // Save settings to file
 function saveSettings(settings) {
   try {
-    const settingsPath = path.join(__dirname, "config", "settings.json");
+    const settingsPath = getPersistPath("settings.json");
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
     console.log("💾 Settings saved:", settings);
     return true;
@@ -129,11 +152,20 @@ function updateActiveWidgets(newActiveWidgets) {
 // Load advanced settings from file
 function loadAdvancedSettings() {
   try {
-    const advancedSettingsPath = path.join(
-      __dirname,
-      "config",
-      "advanced-settings.json"
-    );
+    const advancedSettingsPath = getPersistPath("advanced-settings.json");
+    // Seed file when first run packaged
+    if (!fs.existsSync(advancedSettingsPath)) {
+      try {
+        const bundled = path.join(__dirname, "config", "advanced-settings.json");
+        if (fs.existsSync(bundled)) {
+          fs.writeFileSync(
+            advancedSettingsPath,
+            fs.readFileSync(bundled, "utf8"),
+            "utf8"
+          );
+        }
+      } catch (_) {}
+    }
     const advancedSettingsData = fs.readFileSync(advancedSettingsPath, "utf8");
     const advancedSettings = JSON.parse(advancedSettingsData);
 
@@ -174,11 +206,7 @@ function loadAdvancedSettings() {
 // Save advanced settings to file
 function saveAdvancedSettings(advancedSettings) {
   try {
-    const advancedSettingsPath = path.join(
-      __dirname,
-      "config",
-      "advanced-settings.json"
-    );
+    const advancedSettingsPath = getPersistPath("advanced-settings.json");
     fs.writeFileSync(
       advancedSettingsPath,
       JSON.stringify(advancedSettings, null, 2),
@@ -361,6 +389,11 @@ function loadAllWidgetsConfig() {
 function loadWidgetsConfig() {
   const allWidgets = loadAllWidgetsConfig();
 
+  // Garantir que ACTIVE_WIDGETS é um array válido
+  if (!Array.isArray(ACTIVE_WIDGETS) || ACTIVE_WIDGETS.length === 0) {
+    ACTIVE_WIDGETS = ["organizer", "clock", "gemini"]; // fallback seguro
+  }
+
   // Filter only active widgets based on ACTIVE_WIDGETS
   const filteredWidgets = {};
   ACTIVE_WIDGETS.forEach((key) => {
@@ -417,15 +450,51 @@ function createWidgetView(widgetKey, widgetConfig) {
     const view = new BrowserView({ webPreferences });
     console.log(`✅ BrowserView created for "${widgetKey}":`, view);
 
+    // Melhor experiência de layout e foco para BrowserView
+    try {
+      view.setAutoResize({ width: true, height: false, horizontal: true, vertical: false });
+    } catch (_) {}
+
     // Load the widget content
     if (widgetConfig.url) {
       try {
         console.log(`📂 Loading URL for "${widgetKey}": ${widgetConfig.url}`);
 
         // Sempre usa loadURL para arquivos locais
-        view.webContents.loadURL(widgetConfig.url);
+        // Define um userAgent mais comum para evitar bloqueios de sites
+        try {
+          const ua =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36";
+          view.webContents.setUserAgent(ua);
+        } catch (_) {}
+
+        const targetUrl = widgetConfig.url;
+        const tryLoad = (attempt = 1) => {
+          console.log(`🌐 Loading [${widgetKey}] attempt ${attempt}: ${targetUrl}`);
+          view.webContents.loadURL(targetUrl).catch((e) => {
+            console.error(`❌ loadURL threw [${widgetKey}]`, e?.message || e);
+          });
+        };
+
+        tryLoad(1);
 
         console.log(`📱 Widget "${widgetKey}" loaded: ${widgetConfig.url}`);
+
+        // Diagnóstico e garantia de foco
+        view.webContents.on("did-finish-load", () => {
+          console.log(`✅ did-finish-load: ${widgetKey}`);
+          try { view.webContents.focus(); } catch (_) {}
+        });
+        view.webContents.on("did-fail-load", (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+          console.error(`❌ did-fail-load [${widgetKey}] code=${errorCode} desc=${errorDescription} url=${validatedURL} main=${isMainFrame}`);
+          // Retry simples para falhas transitórias de rede/DNS
+          if (isMainFrame && [ -105, -137, -21, -2 ].includes(errorCode)) {
+            setTimeout(() => tryLoad(2), 1500);
+          }
+        });
+        view.webContents.on("render-process-gone", (event, details) => {
+          console.error(`⚠️ render-process-gone [${widgetKey}]`, details);
+        });
       } catch (loadError) {
         console.error(
           `❌ Error loading widget "${widgetKey}":`,
@@ -809,21 +878,45 @@ function initializeWidgets() {
     }
   });
 
-  // Load external userSites from persisted settings
+  // Load external userSites from persisted settings (model: { key, url, height, name })
   try {
     const persisted = loadSettings();
-    const sites = Array.isArray(persisted.userSites) ? persisted.userSites : [];
-    sites.forEach((siteUrl, idx) => {
-      const key = `site-${idx + 1}`;
+    const rawSites = Array.isArray(persisted.userSites) ? persisted.userSites : [];
+
+    // Migration: various legacy forms -> { key, url, height, name }
+    let needsPersist = false;
+    const sites = rawSites.map((entry, idx) => {
+      if (typeof entry === "string") {
+        needsPersist = true;
+        return { key: `web_${idx + 1}` , url: entry, height: 800, name: "" };
+      }
+      const url = entry?.url || "";
+      const height = Math.max(100, Number(entry?.height) || 800);
+      let key = entry?.key;
+      if (!key) { key = `web_${idx + 1}`; needsPersist = true; }
+      const name = typeof entry?.name === "string" ? entry.name : "";
+      return { key, url, height, name };
+    });
+
+    if (needsPersist) {
+      const updated = { ...persisted, userSites: sites };
+      saveSettings(updated);
+      console.log("🔧 Migrated userSites to {key,url,height,name} format and persisted");
+    }
+
+    sites.forEach((site) => {
+      if (!site || !site.url) return;
+      const key = site.key;
+      const heightPx = Math.max(100, Number(site.height) || 800);
       const view = createWidgetView(key, {
-        url: siteUrl,
-        height: 800,
+        url: site.url,
+        height: heightPx,
         visible: true,
       });
       if (view && mainWindow) {
-        viewsConfig[key] = { url: siteUrl, height: 800, visible: true, view };
+        viewsConfig[key] = { url: site.url, height: heightPx, visible: true, view };
         mainWindow.addBrowserView(view);
-        console.log(`✅ External site view added: ${siteUrl}`);
+        console.log(`✅ External site view added: ${site.url} (key=${key}, h=${heightPx})`);
       }
     });
   } catch (e) {
@@ -1092,6 +1185,18 @@ ipcMain.handle("remove-active-widget", (event, widgetKey) => {
       console.log(`ℹ️ Nenhuma view encontrada para "${widgetKey}"`);
     }
 
+    // Remove o rótulo persistido (se existir) e a entrada de userSites
+    try {
+      const settings = loadSettings();
+      if (settings.widgetLabels && settings.widgetLabels[widgetKey]) {
+        delete settings.widgetLabels[widgetKey];
+      }
+      if (Array.isArray(settings.userSites)) {
+        settings.userSites = settings.userSites.filter((s) => (s?.key || "") !== widgetKey);
+      }
+      saveSettings(settings);
+    } catch (_) {}
+
     // Recarrega o layout
     layoutViews();
 
@@ -1211,6 +1316,23 @@ ipcMain.handle("add-view", (event, { key, config }) => {
 
       // Atualiza o layout
       layoutViews();
+
+      // Persiste dados em settings (rótulo e lista userSites)
+      try {
+        const settings = loadSettings();
+        const labels = settings.widgetLabels || {};
+        if (config && typeof config.name === "string" && config.name.trim()) {
+          labels[key] = config.name.trim();
+          settings.widgetLabels = labels;
+        }
+        // Atualiza userSites com a entrada completa
+        const sites = Array.isArray(settings.userSites) ? settings.userSites : [];
+        if (!sites.some((s) => (s?.key || "") === key)) {
+          sites.push({ key, url: config.url, height: config.height, name: config.name || "" });
+          settings.userSites = sites;
+        }
+        saveSettings(settings);
+      } catch (_) {}
 
       return { success: true };
     } else {
@@ -1715,9 +1837,11 @@ app.whenReady().then(() => {
   ADVANCED_SETTINGS = loadAdvancedSettings();
   console.log("⚙️ Advanced settings loaded:", ADVANCED_SETTINGS);
 
-  // Load settings and update ACTIVE_WIDGETS
+  // Load settings and update ACTIVE_WIDGETS (com fallback)
   const settings = loadSettings();
-  ACTIVE_WIDGETS = settings.activeWidgets;
+  ACTIVE_WIDGETS = Array.isArray(settings.activeWidgets)
+    ? settings.activeWidgets
+    : ["organizer", "clock", "gemini"]; // fallback seguro se ausente
   console.log("🎯 Active widgets loaded from settings:", ACTIVE_WIDGETS);
 
   // Initialize auto-launcher
