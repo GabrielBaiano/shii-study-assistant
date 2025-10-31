@@ -13,6 +13,9 @@ const editor = document.getElementById('editor');
 const preview = document.getElementById('preview');
 const clearBtn = document.getElementById('clearBtn');
 const downloadBtn = document.getElementById('downloadBtn');
+const toggleModeBtn = document.getElementById('toggleModeBtn');
+
+let isPreview = false;
 
 function render() {
   const value = editor.value;
@@ -36,7 +39,7 @@ function save() {
 }
 
 // Eventos
-editor.addEventListener('input', () => { render(); save(); });
+editor.addEventListener('input', () => { if (isPreview) render(); save(); });
 
 clearBtn.addEventListener('click', () => {
   if (confirm('Limpar todas as anotações?')) {
@@ -63,6 +66,26 @@ document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
     e.preventDefault();
     clearBtn.click();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') {
+    e.preventDefault();
+    toggleModeBtn.click();
+  }
+});
+
+// Alterna entre edição e preview no mesmo painel
+toggleModeBtn.addEventListener('click', () => {
+  isPreview = !isPreview;
+  if (isPreview) {
+    render();
+    editor.style.display = 'none';
+    preview.style.display = 'block';
+    toggleModeBtn.textContent = 'Editar';
+  } else {
+    editor.style.display = 'block';
+    preview.style.display = 'none';
+    toggleModeBtn.textContent = 'Preview';
+    editor.focus();
   }
 });
 

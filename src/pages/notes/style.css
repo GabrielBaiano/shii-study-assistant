@@ -1,6 +1,6 @@
 :root {
-  --bg: transparent;
-  --surface: rgba(20, 20, 20, 0.75);
+  --bg: #0e0f12; /* fundo opaco, não transparente */
+  --surface: #171a21; /* container opaco */
   --border: rgba(255, 255, 255, 0.08);
   --text: #e6e6e6;
   --muted: #a3a3a3;
@@ -59,13 +59,7 @@ body {
 }
 .button:hover { filter: brightness(1.05); }
 
-.notes-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  height: 100%;
-  min-height: 0; /* importante para scroll dentro */
-}
+.notes-body { height: 100%; min-height: 0; }
 
 .editor {
   width: 100%;
@@ -74,10 +68,14 @@ body {
   background: transparent;
   color: var(--text);
   border: none;
-  border-right: 1px solid var(--border);
   resize: none;
   outline: none;
   font: 400 14px/1.6 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  overflow-y: auto; /* somente vertical */
+  overflow-x: hidden; /* sem scroll horizontal */
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .preview {
@@ -98,7 +96,6 @@ body {
 .preview blockquote { border-left: 3px solid var(--accent); margin: 0; padding: 8px 12px; color: var(--muted); background: rgba(255,255,255,0.04); border-radius: 6px; }
 
 @media (max-width: 900px) {
-  .notes-body { grid-template-columns: 1fr; }
-  .editor { border-right: none; border-bottom: 1px solid var(--border); height: 40vh; }
+  .editor { height: calc(100vh - 52px); }
 }
 

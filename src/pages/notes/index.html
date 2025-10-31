@@ -22,14 +22,15 @@
     <div class="notes-header">
       <div class="title">📝 Bloco de Notas</div>
       <div class="actions">
+        <button id="toggleModeBtn" class="button secondary" title="Alternar visualização (Ctrl+P)">Preview</button>
         <button id="clearBtn" class="button secondary" title="Limpar (Ctrl+K)">Limpar</button>
         <button id="downloadBtn" class="button" title="Baixar como .md">Baixar</button>
       </div>
     </div>
 
     <div class="notes-body">
-      <textarea id="editor" class="editor" placeholder="# Comece a escrever em Markdown...\n\n- Use **negrito**, _itálico_, listas, títulos, links\n- Blocos de código serão renderizados com destaque\n\n> Dica: Use a preview ao lado para ver o resultado."></textarea>
-      <div id="preview" class="preview"></div>
+      <textarea id="editor" class="editor" placeholder="# Comece a escrever em Markdown...\n\n- Use **negrito**, _itálico_, listas, títulos, links\n- Blocos de código serão renderizados com destaque\n\n> Pressione Preview para visualizar o resultado."></textarea>
+      <div id="preview" class="preview" style="display:none"></div>
     </div>
   </div>
 
