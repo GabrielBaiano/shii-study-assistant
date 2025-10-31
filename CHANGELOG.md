@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.1] - 2025-10-31
+
+### Added
+- Notes widget: Markdown notes editor with dark theme, rounded container, vertical scrolling, preview toggle (Ctrl/Cmd+P), clear (Ctrl/Cmd+K), and .md download. Content persists via localStorage.
+
+### Improved
+- Settings: Preserve `{ key, url, height, name }` for `userSites` when adding/removing/listing.
+- Organizer: Proper initialization order so persisted widget labels/names override IDs.
+
+### Fixed
+- Name persistence for external URLs (no longer falls back to `web_*` after reopen).
+- Visual polish for notes container and line wrapping; removed horizontal scroll.
+
+### Build
+- Packaging script produces `dist/Shii!-Portable-2.0.1.zip` for Windows portable distribution.
+
 ## [2.0.0] - 2024-12-29
 
 ### Added
