@@ -1,5 +1,5 @@
 :root {
-  --bg: #0e0f12; /* fundo opaco, não transparente */
+  --bg: transparent; /* fundo da página transparente */
   --surface: #171a21; /* container opaco */
   --border: rgba(255, 255, 255, 0.08);
   --text: #e6e6e6;
