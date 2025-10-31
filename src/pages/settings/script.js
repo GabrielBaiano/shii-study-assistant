@@ -115,11 +115,6 @@ const elements = {
   // Lists
   sitesList: null,
 
-  // JSON Shortcuts editor
-  shortcutsJson: null,
-  shortcutsJsonError: null,
-  saveShortcutsJsonBtn: null,
-  resetShortcutsJsonBtn: null,
   
   // Shortcut elements
   shortcutScrollUp: null,
@@ -194,11 +189,6 @@ function initializeElements() {
   // Lists
   elements.sitesList = document.getElementById('sitesList');
 
-  // JSON Shortcuts editor
-  elements.shortcutsJson = document.getElementById('shortcutsJson');
-  elements.shortcutsJsonError = document.getElementById('shortcutsJsonError');
-  elements.saveShortcutsJsonBtn = document.getElementById('saveShortcutsJsonBtn');
-  elements.resetShortcutsJsonBtn = document.getElementById('resetShortcutsJsonBtn');
   
   // Shortcut elements
   elements.shortcutScrollUp = document.getElementById('shortcutScrollUp');
@@ -272,9 +262,6 @@ function setupEventListeners() {
   elements.closeBtn?.addEventListener('click', () => window.close());
   elements.addSiteBtn?.addEventListener('click', addSite);
 
-  // Shortcuts JSON buttons
-  elements.saveShortcutsJsonBtn?.addEventListener('click', saveShortcutsFromJson);
-  elements.resetShortcutsJsonBtn?.addEventListener('click', loadShortcutsJsonIntoEditor);
   
   // Shortcut buttons
   elements.remapScrollUpBtn?.addEventListener('click', () => {
@@ -356,8 +343,6 @@ async function loadSettings() {
     if (elements.shortcutToggleLock) elements.shortcutToggleLock.textContent = shortcuts.toggleLock || CONFIG.SHORTCUTS.DEFAULT_TOGGLE_LOCK;
     if (elements.shortcutToggleMinimize) elements.shortcutToggleMinimize.textContent = shortcuts.toggleMinimize || CONFIG.SHORTCUTS.DEFAULT_TOGGLE_MINIMIZE;
 
-    // Editor JSON de atalhos
-    loadShortcutsJsonIntoEditor(shortcuts);
     
     // Carregar sites
     renderSites(settings.userSites || []);
@@ -540,82 +525,7 @@ function captureShortcut(label, onComplete) {
   window.addEventListener('keydown', onKeyDown, true);
 }
 
-// ===== FUNÇÕES: Shortcuts via JSON =====
-const VALID_SHORTCUT_KEYS = ['scrollUp', 'scrollDown', 'toggleLock', 'toggleMinimize'];
 
-function loadShortcutsJsonIntoEditor(existing) {
-  if (!elements.shortcutsJson) return;
-  try {
-    const toUse = existing || (window.__lastLoadedSettingsShortcuts || {});
-    const pretty = JSON.stringify(toUse, null, 2);
-    elements.shortcutsJson.value = pretty;
-    if (elements.shortcutsJsonError) {
-      elements.shortcutsJsonError.style.display = 'none';
-      elements.shortcutsJsonError.textContent = '';
-    }
-  } catch (_) {
-    // no-op
-  }
-}
-
-function validateShortcutCombo(combo) {
-  // Aceita tokens separados por '+' como CommandOrControl, Alt, Shift e uma tecla final (letra, número, palavra)
-  if (typeof combo !== 'string' || !combo.trim()) return false;
-  const parts = combo.split('+').map(p => p.trim()).filter(Boolean);
-  if (parts.length === 0) return false;
-  // Deve conter uma tecla final que não seja apenas modificador
-  const ignore = ['Control', 'Alt', 'Shift', 'Meta', 'CommandOrControl'];
-  const hasRealKey = parts.some(p => !ignore.includes(p));
-  return hasRealKey;
-}
-
-async function saveShortcutsFromJson() {
-  if (!elements.shortcutsJson) return;
-  const raw = elements.shortcutsJson.value;
-  try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed !== 'object' || Array.isArray(parsed) || !parsed) {
-      throw new Error('O JSON deve ser um objeto com chaves de atalhos.');
-    }
-
-    // Validar chaves
-    const keys = Object.keys(parsed);
-    const invalidKeys = keys.filter(k => !VALID_SHORTCUT_KEYS.includes(k));
-    if (invalidKeys.length > 0) {
-      throw new Error(`Chaves inválidas: ${invalidKeys.join(', ')}. Válidas: ${VALID_SHORTCUT_KEYS.join(', ')}`);
-    }
-
-    // Validar combinações
-    const invalidCombos = keys.filter(k => !validateShortcutCombo(String(parsed[k] || '')));
-    if (invalidCombos.length > 0) {
-      throw new Error(`Combinações inválidas para: ${invalidCombos.join(', ')}`);
-    }
-
-    // Mesclar com defaults para não perder atalhos não enviados
-    const current = await window.settingsAPI?.get();
-    const base = current?.shortcuts || {};
-    const merged = { ...base, ...parsed };
-
-    await updateSettingsImmediate({ shortcuts: merged });
-    if (elements.shortcutsJsonError) {
-      elements.shortcutsJsonError.style.display = 'none';
-      elements.shortcutsJsonError.textContent = '';
-    }
-    showNotification('Atalhos salvos com sucesso!', 'success');
-
-    // Atualiza UI textual existente
-    if (elements.shortcutScrollUp) elements.shortcutScrollUp.textContent = merged.scrollUp || CONFIG.SHORTCUTS.DEFAULT_SCROLL_UP;
-    if (elements.shortcutScrollDown) elements.shortcutScrollDown.textContent = merged.scrollDown || CONFIG.SHORTCUTS.DEFAULT_SCROLL_DOWN;
-    if (elements.shortcutToggleLock) elements.shortcutToggleLock.textContent = merged.toggleLock || CONFIG.SHORTCUTS.DEFAULT_TOGGLE_LOCK;
-    if (elements.shortcutToggleMinimize) elements.shortcutToggleMinimize.textContent = merged.toggleMinimize || CONFIG.SHORTCUTS.DEFAULT_TOGGLE_MINIMIZE;
-  } catch (error) {
-    if (elements.shortcutsJsonError) {
-      elements.shortcutsJsonError.style.display = 'block';
-      elements.shortcutsJsonError.textContent = error.message || 'JSON inválido.';
-    }
-    showNotification('Erro ao salvar atalhos (JSON inválido)', 'error');
-  }
-}
 
 // ===== INICIALIZAÇÃO =====
 function initializeSettings() {
