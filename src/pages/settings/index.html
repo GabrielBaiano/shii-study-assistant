@@ -196,6 +196,29 @@
           </div>
         </div>
       </div>
+
+      <!-- Seção Atalhos (JSON) -->
+      <div class="settings-section">
+        <div class="section-title">
+          <div class="section-icon">{ }</div>
+          Configuração de Atalhos (JSON)
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <div>Editar JSON de atalhos</div>
+            <div class="setting-description">Edite as combinações e clique em salvar. Chaves válidas: scrollUp, scrollDown, toggleLock, toggleMinimize.</div>
+          </div>
+          <div class="setting-control">
+            <textarea id="shortcutsJson" style="width:100%; height:140px; resize:vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; font-size:12px;"></textarea>
+            <div id="shortcutsJsonError" style="color: var(--danger, #ff6b6b); font-size: 12px; margin-top: 6px; display:none;"></div>
+            <div style="margin-top:8px; display:flex; gap:8px;">
+              <button class="button" id="saveShortcutsJsonBtn">Salvar</button>
+              <button class="button secondary" id="resetShortcutsJsonBtn">Recarregar</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Footer -->
