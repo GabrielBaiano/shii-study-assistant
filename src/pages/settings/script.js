@@ -369,12 +369,15 @@ function renderSites(sites) {
   }
   
   sites.forEach((siteEntry, index) => {
-    const url = typeof siteEntry === 'string' ? siteEntry : siteEntry?.url;
-    const height = typeof siteEntry === 'object' && siteEntry?.height ? siteEntry.height : 800;
+    const isString = typeof siteEntry === 'string';
+    const url = isString ? siteEntry : (siteEntry?.url || '');
+    const name = !isString && typeof siteEntry?.name === 'string' ? siteEntry.name : '';
+    const height = !isString && siteEntry?.height ? siteEntry.height : 800;
+    const displayLabel = (name && name.trim()) ? name.trim() : url;
     const siteItem = document.createElement('div');
     siteItem.className = 'site-item';
     siteItem.innerHTML = `
-      <span class="site-url">${url}</span>
+      <span class="site-url">${displayLabel}</span>
       <span class="site-height" style="margin-left:8px;opacity:.7">h:${height}px</span>
       <button class="remove-button" data-index="${index}">${CONFIG.TEXTS.BUTTONS.REMOVE}</button>
     `;
@@ -403,10 +406,21 @@ async function addSite() {
   try {
     const settings = await window.settingsAPI?.get();
     const currentSites = settings?.userSites || [];
-    // Migra strings para objetos e evita duplicatas por URL
-    const normalized = currentSites.map((e) => typeof e === 'string' ? { url: e, height: 800 } : { url: e.url, height: e.height || 800 });
+    // Preserva campos existentes (key, name, height) e migra strings
+    const normalized = currentSites.map((entry, idx) => {
+      if (typeof entry === 'string') {
+        return { key: `web_${idx + 1}`, url: entry, height: 800, name: '' };
+      }
+      return {
+        key: entry?.key || `web_${idx + 1}`,
+        url: entry?.url || '',
+        height: Math.max(100, Number(entry?.height) || 800),
+        name: typeof entry?.name === 'string' ? entry.name : ''
+      };
+    });
     if (!normalized.find((e) => e.url === url)) {
-      normalized.push({ url, height: 800 });
+      const newKey = `web_${normalized.length + 1}`;
+      normalized.push({ key: newKey, url, height: 800, name: '' });
     }
     // Salvar imediatamente
     await updateSettingsImmediate({ userSites: normalized });
@@ -423,7 +437,18 @@ async function removeSite(index) {
   try {
     const settings = await window.settingsAPI?.get();
     const currentSites = settings?.userSites || [];
-    const normalized = currentSites.map((e) => typeof e === 'string' ? { url: e, height: 800 } : { url: e.url, height: e.height || 800 });
+    // Preserva objetos completos e migra strings
+    const normalized = currentSites.map((entry, idx) => {
+      if (typeof entry === 'string') {
+        return { key: `web_${idx + 1}`, url: entry, height: 800, name: '' };
+      }
+      return {
+        key: entry?.key || `web_${idx + 1}`,
+        url: entry?.url || '',
+        height: Math.max(100, Number(entry?.height) || 800),
+        name: typeof entry?.name === 'string' ? entry.name : ''
+      };
+    });
     const updated = normalized.filter((_, i) => i !== index);
     
     // Salvar imediatamente

@@ -295,6 +295,18 @@
             // Carrega a ordem atual das views do processo principal (baseada em ACTIVE_WIDGETS)
             let widgetOrder = await ipcRenderer.invoke('get-active-widgets');
 
+            // Mapeamento de nomes amigáveis para as views (inicialização antes do merge de persistência)
+            const viewNames = {
+                'clock': 'Relógio',
+                'pomodoro': 'Pomodoro',
+                'gemini': 'Gemini AI',
+                'organizer': 'Organizador',
+                'settings': 'Configurações',
+                'stealth': 'Stealth',
+                'placeholder': 'Placeholder',
+                'about': 'Sobre'
+            };
+
             // Carrega rótulos persistidos e nomes de userSites, mesclando em viewNames
             try {
                 const persistedSettings = await ipcRenderer.invoke('settings:get');
@@ -311,18 +323,6 @@
                     if (k && nm) viewNames[k] = nm;
                 });
             } catch (_) {}
-
-            // Mapeamento de nomes amigáveis para as views
-            const viewNames = {
-                'clock': 'Relógio',
-                'pomodoro': 'Pomodoro',
-                'gemini': 'Gemini AI',
-                'organizer': 'Organizador',
-                'settings': 'Configurações',
-                'stealth': 'Stealth',
-                'placeholder': 'Placeholder',
-                'about': 'Sobre'
-            };
 
             // Carrega as páginas disponíveis do JSON
             let availablePages = [];
