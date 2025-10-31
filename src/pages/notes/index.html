@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloco de Notas (Markdown)</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
+
+  <!-- Highlight.js para blocos de código -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Marked.js para interpretar Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="notes-container">
+    <div class="notes-header">
+      <div class="title">📝 Bloco de Notas</div>
+      <div class="actions">
+        <button id="clearBtn" class="button secondary" title="Limpar (Ctrl+K)">Limpar</button>
+        <button id="downloadBtn" class="button" title="Baixar como .md">Baixar</button>
+      </div>
+    </div>
+
+    <div class="notes-body">
+      <textarea id="editor" class="editor" placeholder="# Comece a escrever em Markdown...\n\n- Use **negrito**, _itálico_, listas, títulos, links\n- Blocos de código serão renderizados com destaque\n\n> Dica: Use a preview ao lado para ver o resultado."></textarea>
+      <div id="preview" class="preview"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
+

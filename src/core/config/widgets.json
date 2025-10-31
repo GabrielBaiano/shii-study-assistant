@@ -55,4 +55,11 @@
     "visible": false,
     "view": null
   }
+  ,
+  "notes": {
+    "url": "file://src/pages/notes/index.html",
+    "height": 560,
+    "visible": true,
+    "view": null
+  }
 }
